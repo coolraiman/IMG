@@ -119,6 +119,10 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
+    <Compile Include="DataConverter\BoolToColor.cs" />
+    <Compile Include="Dialog\TextInputContentDialog.xaml.cs">
+      <DependentUpon>TextInputContentDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
@@ -127,6 +131,9 @@
     <Compile Include="Models\ImageData.cs" />
     <Compile Include="Models\ImageTag.cs" />
     <Compile Include="Models\Tag.cs" />
+    <Compile Include="Pages\SearchPage.xaml.cs">
+      <DependentUpon>SearchPage.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Pages\UploadPage.xaml.cs">
       <DependentUpon>UploadPage.xaml</DependentUpon>
     </Compile>
@@ -136,6 +143,7 @@
     <Compile Include="Utility\BindableObject.cs" />
     <Compile Include="Utility\DataUtility.cs" />
     <Compile Include="Wrappers\FullScreenImage.cs" />
+    <Compile Include="Wrappers\ImageSearch.cs" />
   </ItemGroup>
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest">
@@ -157,9 +165,17 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Dialog\TextInputContentDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Pages\SearchPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Pages\UploadPage.xaml">
       <SubType>Designer</SubType>

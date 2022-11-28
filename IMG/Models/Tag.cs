@@ -12,7 +12,6 @@ namespace IMG.Models
         private string name;
         private string description;
 
-        public int ID { get; set; }
         public string Name 
         { 
             get { return name; } 
@@ -37,11 +36,11 @@ namespace IMG.Models
             }
         }
 
-        public Tag(int ID, string Name, string Description = "")
+        public Tag(string Name, string Description = "")
         {
-            this.ID = ID;
             this.Name = Name;
             this.Description = Description;
         }
+
     }
 }

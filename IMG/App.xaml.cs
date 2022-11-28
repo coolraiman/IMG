@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
+using Windows.ApplicationModel.Core;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
@@ -23,16 +25,36 @@ namespace IMG
     /// </summary>
     sealed partial class App : Application
     {
+        private static void UnhandledError(object sender, UnhandledErrorDetectedEventArgs eventArgs)
+        {
+            try
+            {
+                // A breakpoint here is generally uninformative
+                eventArgs.UnhandledError.Propagate();
+            }
+            catch (Exception e)
+            {
+                // Set a breakpoint here:
+                Debug.WriteLine("Error: {0}", e);
+                throw;
+            }
+        }
         /// <summary>
         /// Initializes the singleton application object.  This is the first line of authored code
         /// executed, and as such is the logical equivalent of main() or WinMain().
         /// </summary>
         public App()
         {
-            checkDB();
-            checkFiles();
+            CoreApplication.UnhandledErrorDetected += UnhandledError;
+            //checkDB();
+            //checkFiles();
             this.InitializeComponent();
             this.Suspending += OnSuspending;
+
+            // This can be useful for debugging XAML:
+            DebugSettings.IsBindingTracingEnabled = true;
+            DebugSettings.BindingFailed +=
+                (sender, args) => Debug.WriteLine(args.Message);
         }
 
         private async void checkFiles()

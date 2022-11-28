@@ -5,10 +5,11 @@ using System.Linq;
 using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
+using Windows.UI.Xaml.Media;
 
 namespace IMG.Models
 {
-    public class ImageData
+    public class ImageData :BindableObject
     {
         public ImageData() 
         {
@@ -32,6 +33,18 @@ namespace IMG.Models
         {
             get { return Hash + "." + Extension; }
 
+        }
+
+        private bool duplicate = false;
+        public bool Duplicate
+        {
+            get { return duplicate; }
+            set 
+            {
+                if(value !=duplicate)
+                    duplicate = value;
+                OnPropertyChanged(); 
+            }
         }
     }
 }

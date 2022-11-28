@@ -1,4 +1,5 @@
 ﻿using IMG.Models;
+using IMG.SQLite;
 using IMG.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,9 @@ using Windows.Storage.AccessCache;
 using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
+using Windows.UI.Popups;
 using Windows.UI.Xaml;
+using Windows.UI.Xaml.Automation.Peers;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Data;
@@ -41,26 +44,91 @@ namespace IMG.Pages
         //private ImageData fullScreenImage;
         private FullScreenImage fullScreenImage = new FullScreenImage();
         private int navIndex = -1;
+        private List<Tag> tagsList;
+        private List<ImageData> duplicates;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
         public UploadPage()
         {
             imageCol = new ObservableCollection<ImageData>();
+            duplicates = new List<ImageData>();
             this.InitializeComponent();
 
             ImageGrid.ItemsSource = imageCol;
-            DataContext = fullScreenImage;
+            tagsListView.ItemsSource = fullScreenImage.Image.Tags;
             Window.Current.CoreWindow.CharacterReceived += CoreWindow_CharacterReceived;
             Window.Current.CoreWindow.KeyDown += CoreWindow_KeyDown;
         }
 
-        private void onTagBoxEnter(object sender, KeyRoutedEventArgs e)
+        //async task to do when page is loaded
+        private void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            if (e.Key != VirtualKey.Enter)
+            tagsList = SQLiteConnector.GetTags();
+        }
+
+
+        private void AutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            // Only get results when it was a user typing,
+            // otherwise assume the value got filled in by TextMemberPath
+            // or the handler for SuggestionChosen.
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+            {
+                List<string> result = tagsList.Select(o => o.Name).Where(x => x.StartsWith(sender.Text)).ToList();
+                sender.ItemsSource = result;
+            }
+        }
+        private void AutoSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
+        {
+            // Set sender.Text. You can use args.SelectedItem to build your text string.
+            //give focus back to box after selecting
+            //sender.Focus(FocusState.Programmatic);
+        }
+
+
+        private void AutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            string cleanText = sender.Text.Trim();
+            //double checking
+            if (fullScreenImage.Image.Tags.Where(x => x.Name == cleanText).Count() > 0)
                 return;
 
-            fullScreenImage.Image.Tags.Add(new Tag(0, TagTextBox.Text));
+            if (SQLiteConnector.TagExist(cleanText))
+            {
+                fullScreenImage.Image.Tags.Add(new Tag(cleanText));
+                sender.Text = "";
+                return;
+            }
+
+            
+        }
+
+        private async void TagMessageHandler(IUICommand command)
+        {
+            if (command.Label == "Create Tag")
+            {
+                Tag t = new Tag(AutoSuggestTag.Text.TrimEnd());
+                if (SQLiteConnector.CreateTag(t))
+                {
+                    fullScreenImage.Image.Tags.Add(t);
+                    AutoSuggestTag.Text = "";
+                }
+            }
+            else if(command.Label == "Create and add description")
+            {
+                var dialog = new Dialog.TextInputContentDialog(AutoSuggestTag.Text);
+                var result = await dialog.ShowAsync();
+                if(result == ContentDialogResult.Primary)
+                {
+                    Tag t = new Tag(AutoSuggestTag.Text.TrimEnd(), dialog.Text.TrimEnd());
+                    if(SQLiteConnector.CreateTag(t))
+                    {
+                        fullScreenImage.Image.Tags.Add(t);
+                        AutoSuggestTag.Text = "";
+                    }
+                }
+            }
         }
 
         private void showFlyout(object sender, RightTappedRoutedEventArgs e)
@@ -86,6 +154,14 @@ namespace IMG.Pages
 
         }
 
+        private void tagViewerRightTap(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (tagsListView.SelectedIndex < 0)
+                return;
+
+            fullScreenImage.Image.Tags.Remove((Tag)tagsListView.SelectedItem);
+        }
+
         private void removeSelected(object sender, RoutedEventArgs e)
         {
             //TODO add confirm prompt and more error catch
@@ -109,6 +185,7 @@ namespace IMG.Pages
                     {
                         byte[] hashValue = crypt.ComputeHash(fileStream.AsStream());
                         string hexFile = BitConverter.ToString(hashValue);
+                        ((ImageData)ImageGrid.SelectedItems[i]).Hash = hexFile;
 
                         try
                         {
@@ -119,7 +196,7 @@ namespace IMG.Pages
                         }
                         catch (System.Exception ex)
                         {
-                            //TODO add red border
+                            ((ImageData)ImageGrid.SelectedItems[i]).Duplicate = true;
                         }
                     }
 
@@ -130,7 +207,7 @@ namespace IMG.Pages
             {
                 imageCol.Remove(img);
             }
-            int rows = await SQLite.SQLiteConnector.addImages(addedElements);
+            int rows = SQLiteConnector.addImages(addedElements);
             rows++;
         }
 
@@ -213,6 +290,29 @@ namespace IMG.Pages
             }
         }
 
+        public void ScanDuplicate(object sender, RoutedEventArgs e)
+        {
+            duplicates = SQLiteConnector.findDuplicateFromList(imageCol.ToList());
+            foreach(ImageData dup in duplicates)
+            {
+                dup.Duplicate = true;
+            }
+        }
+
+        public void RemoveDuplicate(object sender, RoutedEventArgs e)
+        {
+            foreach(ImageData img in duplicates)
+            {
+                imageCol.Remove(img);
+            }
+            duplicates = new List<ImageData>();
+        }
+
+        public void ClickSearch(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(SearchPage));
+        }
+
         public bool isDuplicateFile(string file)
         {
             for(int i = 0; i < imageCol.Count; i++)
@@ -270,6 +370,7 @@ namespace IMG.Pages
                 await bitmapImage.SetSourceAsync(fileStream);
                 FullscreenImage_UI.Source = bitmapImage;
             }
+            tagsListView.ItemsSource = fullScreenImage.Image.Tags;
         }
         private void CoreWindow_CharacterReceived(CoreWindow sender, CharacterReceivedEventArgs args)
         {
@@ -281,7 +382,6 @@ namespace IMG.Pages
                 }
             }
         }
-
         private async void CoreWindow_KeyDown(CoreWindow sender, KeyEventArgs args)
         {
             if (FullScreenPanel.Visibility == Visibility.Visible)
