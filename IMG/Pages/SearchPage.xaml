@@ -20,16 +20,36 @@
             BorderBrush="Black"
             BorderThickness="1"
             Orientation="Horizontal">
+            <Button Content="Upload" Click="OnClickUpload" Margin="2"></Button>
         </StackPanel>
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Width="auto">
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Width="auto" x:Name="searchPanel">
             <StackPanel Orientation="Vertical" Width="300">
-                <TextBlock Text="Search window" HorizontalAlignment="Center"></TextBlock>
+                <TextBlock Text="Search window" HorizontalAlignment="Center" Margin="1"></TextBlock>
                 <AutoSuggestBox Name="searchIncludeAutoSuggest"
                                 TextChanged="AutoSuggestBox_TextChanged"
                                 QuerySubmitted="AutoSuggestBoxInclude_QuerySubmitted"
                                 SuggestionChosen="AutoSuggestBox_SuggestionChosen">
                 </AutoSuggestBox>
-                <ListView Width="290" Height="300" x:Name="searchInclude">
+                <ListView Width="290" Height="300" x:Name="searchInclude" BorderBrush="Black" BorderThickness="1" Margin="1">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="Models:Tag">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{x:Bind Name}" VerticalAlignment="Center" HorizontalAlignment="Left">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="{x:Bind Description}" VerticalOffset="-20"/>
+                                    </ToolTipService.ToolTip>
+                                </TextBlock>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+                <TextBlock Text="exclude" HorizontalAlignment="Center" Margin="1"></TextBlock>
+                <AutoSuggestBox Name="searchExcludeAutoSuggest"
+                                TextChanged="AutoSuggestBox_TextChanged"
+                                QuerySubmitted="AutoSuggestBoxExclude_QuerySubmitted"
+                                SuggestionChosen="AutoSuggestBox_SuggestionChosen">
+                </AutoSuggestBox>
+                <ListView Width="290" Height="300" x:Name="searchExclude" BorderBrush="Black" BorderThickness="1" Margin="1">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="Models:Tag">
                             <StackPanel Orientation="Horizontal">
@@ -44,33 +64,42 @@
                 </ListView>
                 <Button Content="Search" Click="OnClickSearch"></Button>
             </StackPanel>
-            <GridView x:Name="ImageGrid" Width="Auto" Background="LightBlue" Margin="5" Height="400" VerticalAlignment="Top"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      ScrollViewer.HorizontalScrollMode="Disabled"
-                      ScrollViewer.VerticalScrollBarVisibility="Visible"
-                      ScrollViewer.VerticalScrollMode="Enabled" 
-                      DoubleTapped="ImageGrid_DoubleTap" RightTapped="showFlyout"
-                      SelectionMode="Extended">
-                <GridView.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <ItemsWrapGrid Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </GridView.ItemsPanel>
-                <GridView.ItemTemplate>
-                    <DataTemplate x:Name="ImgThumbnail" x:DataType="Models:ImageData">
-                        <StackPanel
-                                Width="100"
-                                Height="120"
-                                Margin="5"
-                                AutomationProperties.Name="{x:Bind Hash}">
-                            <StackPanel Margin="1">
-                                <TextBlock Text="{x:Bind File}" />
+            <StackPanel Orientation="Vertical" Width="auto">
+                <StackPanel x:Name="orderParam" Orientation="Horizontal">
+                    <TextBlock x:Name="OrderType" Text="order by "></TextBlock>
+                    <ComboBox SelectedIndex="0" Margin="2">
+                        <ComboBoxItem Content="Ascending"></ComboBoxItem>
+                        <ComboBoxItem Content="Descending"></ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+                <GridView x:Name="ImageGrid" Width="Auto" Background="LightBlue" Margin="5" Height="800" VerticalAlignment="Top"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.HorizontalScrollMode="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Visible"
+                          ScrollViewer.VerticalScrollMode="Enabled" 
+                          DoubleTapped="ImageGrid_DoubleTap" RightTapped="showFlyout"
+                          SelectionMode="Extended">
+                    <GridView.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <ItemsWrapGrid Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </GridView.ItemsPanel>
+                    <GridView.ItemTemplate>
+                        <DataTemplate x:Name="ImgThumbnail" x:DataType="Models:ImageData">
+                            <StackPanel
+                                    Width="100"
+                                    Height="120"
+                                    Margin="5"
+                                    AutomationProperties.Name="{x:Bind Hash}">
+                                <StackPanel Margin="1">
+                                    <TextBlock Text="{x:Bind File}" />
+                                </StackPanel>
+                                <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="UniformToFill" />
                             </StackPanel>
-                            <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="UniformToFill" />
-                        </StackPanel>
-                    </DataTemplate>
-                </GridView.ItemTemplate>
-            </GridView>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </StackPanel>
         </StackPanel>
         <StackPanel Orientation="Horizontal" Visibility="Collapsed" x:Name="FullScreenPanel" Grid.Row="1">
             <StackPanel Orientation="Vertical" Width="300" BorderBrush="Black" BorderThickness="1">

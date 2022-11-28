@@ -253,31 +253,32 @@ namespace IMG.SQLite
 
             SQLiteConnection con = getConnection();
             con.Open();
-
+            //main command, get everything if no args
             var cmd = new SQLiteCommand(con)
-            {
-                CommandText = "SELECT Images.hash, Images.extension, Images.name, TagName FROM IMAGES, ImagesTags WHERE Images.hash = ImageHash"
-            };  
+            {//                                                                                                             join
+                CommandText = "SELECT Images.hash, Images.extension, Images.name, TagName FROM IMAGES, ImagesTags WHERE Images.hash = ImageHash "
+            };
 
             if (includeArgs.Count > 0)
             {
-                cmd.CommandText += " AND (";
+                cmd.CommandText += " AND Images.hash IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
                 for (int i = 0; i < includeArgs.Count - 1; i++)
                 {
                     cmd.CommandText += " TagName = '" + includeArgs[i] + "' OR ";
                 }
-                cmd.CommandText += " TagName = '" + includeArgs[includeArgs.Count - 1] + "')";
+                cmd.CommandText += " TagName = '" + includeArgs[includeArgs.Count - 1] + "') ";
+                cmd.CommandText += " GROUP BY ImageHash HAVING COUNT(*) = " + includeArgs.Count.ToString() + ")";
             }
+                
             if (excludeArgs.Count > 0)
             {
-                cmd.CommandText += " AND (";
+                cmd.CommandText += " AND Images.hash NOT IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
                 for (int i = 0; i < excludeArgs.Count - 1; i++)
                 {
-                    cmd.CommandText += " TagName != '" + excludeArgs[i] + "' AND ";
+                    cmd.CommandText += " TagName = '" + excludeArgs[i] + "' OR ";
                 }
-                cmd.CommandText += " TagName != '" + excludeArgs[excludeArgs.Count - 1] + "')";
+                cmd.CommandText += " TagName = '" + excludeArgs[excludeArgs.Count - 1] + "'))";
             }
-            cmd.CommandText += " ORDER BY Images.hash";
 
             var rdr = await cmd.ExecuteReaderAsync();
 

@@ -52,6 +52,7 @@ namespace IMG.Pages
             ImageGrid.ItemsSource = imageCol;
             tagsListView.ItemsSource = fullScreenImage.Image.Tags;
             searchInclude.ItemsSource = search.Include;
+            searchExclude.ItemsSource = search.Exclude;
             //DataContext = fullScreenImage;
             Window.Current.CoreWindow.CharacterReceived += CoreWindow_CharacterReceived;
             Window.Current.CoreWindow.KeyDown += CoreWindow_KeyDown;
@@ -83,8 +84,8 @@ namespace IMG.Pages
 
         private async void OnClickSearch(object sender, RoutedEventArgs e)
         {
-            //imageCol.Clear();
-            List<ImageData> imgs = await SQLiteConnector.searchImages(search.Include.Select(x => x.Name).ToList(), new List<string>());
+            imageCol.Clear();
+            List<ImageData> imgs = await SQLiteConnector.searchImages(search.Include.Select(x => x.Name).ToList(), search.Exclude.Select(x => x.Name).ToList());
             
             await loadSearchResultsThumbnails(imgs);
         }
@@ -140,12 +141,27 @@ namespace IMG.Pages
         {
             string cleanText = sender.Text.Trim();
             //double checking
-            if (search.Include.Where(x => x.Name == cleanText).Count() > 0)
+            if (search.Include.Where(x => x.Name == cleanText).Count() > 0 || search.Exclude.Where(x => x.Name == cleanText).Count() > 0)
                 return;
 
             if (SQLiteConnector.TagExist(cleanText))
             {
                 search.Include.Add(new Tag(cleanText));
+                sender.Text = "";
+                return;
+            }
+        }
+
+        private void AutoSuggestBoxExclude_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            string cleanText = sender.Text.Trim();
+            //double checking
+            if (search.Include.Where(x => x.Name == cleanText).Count() > 0 || search.Exclude.Where(x => x.Name == cleanText).Count() > 0)
+                return;
+
+            if (SQLiteConnector.TagExist(cleanText))
+            {
+                search.Exclude.Add(new Tag(cleanText));
                 sender.Text = "";
                 return;
             }
@@ -220,7 +236,9 @@ namespace IMG.Pages
         private async Task loadFullscreenImage(int index)
         {
             fullScreenImage.Image = imageCol[index];
-            var file = await StorageApplicationPermissions.FutureAccessList.GetFileAsync(imageCol[index].FaToken);
+            StorageFolder imgsFolder = await ApplicationData.Current.LocalFolder.GetFolderAsync("imgs");
+            StorageFolder subFolder = await imgsFolder.GetFolderAsync(imageCol[index].Hash.Substring(0, 2));
+            StorageFile file = await subFolder.GetFileAsync(imageCol[index].Hash + imageCol[index].Extension);
             // Ensure the stream is disposed once the image is loaded
             using (IRandomAccessStream fileStream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read))
             {
@@ -295,6 +313,7 @@ namespace IMG.Pages
 
             navIndex = ImageGrid.SelectedIndex;
             ImageGrid.Visibility = Visibility.Collapsed;
+            searchPanel.Visibility = Visibility.Collapsed;
             FullScreenPanel.Visibility = Visibility.Visible;
             return true;
         }
@@ -302,6 +321,7 @@ namespace IMG.Pages
         private void exitFullScreenMode()
         {
             ImageGrid.Visibility = Visibility.Visible;
+            searchPanel.Visibility = Visibility.Visible;
             FullScreenPanel.Visibility = Visibility.Collapsed;
             ImageGrid.SelectedIndex = navIndex;
         }
@@ -311,6 +331,11 @@ namespace IMG.Pages
             if (ImageGrid.Visibility == Visibility.Visible)
                 return false;
             return true;
+        }
+
+        public void OnClickUpload(object sender, RoutedEventArgs e)
+        {
+            this.Frame.Navigate(typeof(UploadPage));
         }
     }
 }
