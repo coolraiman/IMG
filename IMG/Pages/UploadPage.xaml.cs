@@ -1,5 +1,6 @@
 ﻿using IMG.Models;
 using IMG.SQLite;
+using IMG.Utility;
 using IMG.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -178,28 +179,28 @@ namespace IMG.Pages
             {
                 for (int i = 0; i < ImageGrid.SelectedItems.Count; i++)
                 {
-
+                    ImageData img = ((ImageData)ImageGrid.SelectedItems[i]);
+                    if (img.Duplicate)
+                        continue;
+                    else if (SQLiteConnector.findDuplicateFromHash(img.Hash))//duplicate hash
+                    {
+                        img.Duplicate = true;
+                        continue;
+                    }
                     var file = await StorageApplicationPermissions.FutureAccessList.GetFileAsync(((ImageData)(ImageGrid.SelectedItems[i])).FaToken);
                     // Ensure the stream is disposed once the image is loaded
                     using (IRandomAccessStream fileStream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read))
                     {
-                        byte[] hashValue = crypt.ComputeHash(fileStream.AsStream());
-                        string hexFile = BitConverter.ToString(hashValue);
-                        ((ImageData)ImageGrid.SelectedItems[i]).Hash = hexFile;
+                        //byte[] hashValue = crypt.ComputeHash(fileStream.AsStream());
+                        //string hexFile = BitConverter.ToString(hashValue);
+                        //((ImageData)ImageGrid.SelectedItems[i]).Hash = hexFile;
 
-                        try
-                        {
-                            StorageFolder subFolder = await imgsFolder.GetFolderAsync(hexFile.Substring(0, 2));
-                            await file.CopyAsync(subFolder, hexFile + ((ImageData)(ImageGrid.SelectedItems[i])).Extension, NameCollisionOption.FailIfExists);
-                            addedElements.Add((ImageData)ImageGrid.SelectedItems[i]);
-
-                        }
-                        catch (System.Exception ex)
-                        {
-                            ((ImageData)ImageGrid.SelectedItems[i]).Duplicate = true;
-                        }
+                        StorageFolder subFolder = await imgsFolder.GetFolderAsync(img.Hash.Substring(0, 2));
+                        //var item = subFolder.TryGetItemAsync(img.Hash + img.Extension);
+                        
+                        await file.CopyAsync(subFolder, img.Hash + img.Extension, NameCollisionOption.ReplaceExisting);
+                        addedElements.Add(img);
                     }
-
                 }
             }
 
@@ -262,7 +263,7 @@ namespace IMG.Pages
                     imageCol.Add(new ImageData()
                     {
                         Name = file.Name,
-                        Hash = file.Path, //temp
+                        Hash = "",
                         Extension = file.FileType,
                         FaToken = StorageApplicationPermissions.FutureAccessList.Add(file)
                     }) ;
@@ -278,6 +279,7 @@ namespace IMG.Pages
                         BitmapImage bitmapImage = new BitmapImage();
                         //file.Path = "D:\\Yuru Yuri\\0f60c26056fb2288b244fdd35d3d9a94.jpg"
                         await bitmapImage.SetSourceAsync(fileStream);
+
                         bitmapImage.DecodePixelWidth = 150;
 
                         //find the ImageComponent
@@ -288,6 +290,8 @@ namespace IMG.Pages
                     }
                 }
             }
+
+            await generateImageHash();
         }
 
         public void ScanDuplicate(object sender, RoutedEventArgs e)
@@ -296,6 +300,24 @@ namespace IMG.Pages
             foreach(ImageData dup in duplicates)
             {
                 dup.Duplicate = true;
+            }
+        }
+
+        private async Task generateImageHash()
+        {
+            foreach (ImageData img in imageCol)
+            {
+                using (SHA256 crypt = SHA256.Create())
+                {
+                    var file = await StorageApplicationPermissions.FutureAccessList.GetFileAsync(img.FaToken);
+                    // Ensure the stream is disposed once the image is loaded
+                    using (IRandomAccessStream fileStream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read))
+                    {
+                        byte[] hashValue = crypt.ComputeHash(fileStream.AsStream());
+                        string hexFile = BitConverter.ToString(hashValue);
+                        img.Hash = hexFile;
+                    }
+                }
             }
         }
 
@@ -449,6 +471,13 @@ namespace IMG.Pages
             if(ImageGrid.Visibility == Visibility.Visible)
                 return false;
             return true;
+        }
+
+        private async void MenuFlyoutDelete_Click(object sender, RoutedEventArgs e)
+        {
+            await FolderUtility.deleteAllImages();
+            SQLiteConnector.initDatabase();
+            this.Frame.Navigate(typeof(UploadPage));
         }
     }
 

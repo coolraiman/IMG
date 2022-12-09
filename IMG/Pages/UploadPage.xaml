@@ -11,13 +11,21 @@
     mc:Ignorable="d" SizeChanged="Page_SizeChanged"
     Loaded="Page_Loaded"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
     <Grid x:Name="root">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel x:Name="topUI" Grid.Row="0"
+        <MenuBar VerticalAlignment="Top" Grid.Row="0">
+            <MenuBarItem Title="File">
+
+            </MenuBarItem>
+            <MenuBarItem Title="Debug">
+                <MenuFlyoutItem Text="Delete all" Click="MenuFlyoutDelete_Click"></MenuFlyoutItem>
+            </MenuBarItem>
+        </MenuBar>
+        <StackPanel x:Name="topUI" Grid.Row="1"
             Padding="2"
             BorderBrush="Black"
             BorderThickness="1"
@@ -27,8 +35,8 @@
             <Button Click="RemoveDuplicate" Content="Remove Duplicate" Margin="2"/>
             <Button Click="ClickSearch" Content="Search Page" Margin="2"/>
         </StackPanel>
-
-        <GridView x:Name="ImageGrid" Width="Auto" Background="LightBlue" Grid.Row="1" Margin="5" Height="400"
+        
+        <GridView x:Name="ImageGrid" Width="Auto" Background="LightBlue" Grid.Row="2" Margin="5" Height="400"
                       SizeChanged="ImageGridSizeChanged"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       ScrollViewer.HorizontalScrollMode="Disabled"

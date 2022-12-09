@@ -46,6 +46,33 @@ namespace IMG.SQLite
             return "SQLite version:" + version;
         }
 
+        public static bool isDatabaseReady()
+        {
+            bool valid = true;
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                string query = "SELECT name FROM sqlite_master WHERE type='table' AND name=@tName";
+                string[] tables = { "ImagesTags", "images", "tags" };
+
+                foreach(string name in tables)
+                {
+                    using (SQLiteCommand cmd = new SQLiteCommand(query, con))
+                    {
+                        cmd.Parameters.AddWithValue("tName", name);
+                        using (var rdr = cmd.ExecuteReader())
+                        {
+                            if (!rdr.HasRows)
+                                valid = false;
+                        }
+                    }
+                }
+
+            }
+
+            return valid;
+        }
+
         public static void initDatabase()
         {
             string[] dropTable = { "DROP TABLE IF EXISTS ImagesTags", "DROP TABLE IF EXISTS tags" , "DROP TABLE IF EXISTS categories", "DROP TABLE IF EXISTS images" };
@@ -223,8 +250,6 @@ namespace IMG.SQLite
         {
             List<ImageData> duplicate = new List<ImageData>();
  
-            
-            bool hasRows = false;
             using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
             {
                 con.Open();
@@ -246,7 +271,30 @@ namespace IMG.SQLite
             }
             return duplicate;
         }
-        //grossly inneficient TODO, better sql magic, tag dont have descriptions
+
+        public static bool findDuplicateFromHash(string hash)
+        {
+            bool duplicate = false;
+
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+
+                    using (SQLiteCommand cmd = new SQLiteCommand("SELECT Hash FROM Images WHERE hash = @search", con))
+                    {
+                        cmd.Parameters.AddWithValue("search", hash);
+
+                        using (SQLiteDataReader reader = cmd.ExecuteReader())
+                        {
+                        if (reader.HasRows)
+                            duplicate = true;
+                        }
+                    }
+            }
+            return duplicate;
+        }
+
+        //TODO use parameters to make it sql injection safe
         public static async Task<List<ImageData>> searchImages(List<string> includeArgs, List<string> excludeArgs) 
         {
             List<ImageData> images = new List<ImageData>();

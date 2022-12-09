@@ -30,7 +30,7 @@
                                 QuerySubmitted="AutoSuggestBoxInclude_QuerySubmitted"
                                 SuggestionChosen="AutoSuggestBox_SuggestionChosen">
                 </AutoSuggestBox>
-                <ListView Width="290" Height="300" x:Name="searchInclude" BorderBrush="Black" BorderThickness="1" Margin="1">
+                <ListView Width="290" Height="300" x:Name="searchInclude" BorderBrush="Black" BorderThickness="1" Margin="1" DoubleTapped="searchIncludeDoubleTapped">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="Models:Tag">
                             <StackPanel Orientation="Horizontal">
@@ -49,7 +49,7 @@
                                 QuerySubmitted="AutoSuggestBoxExclude_QuerySubmitted"
                                 SuggestionChosen="AutoSuggestBox_SuggestionChosen">
                 </AutoSuggestBox>
-                <ListView Width="290" Height="300" x:Name="searchExclude" BorderBrush="Black" BorderThickness="1" Margin="1">
+                <ListView Width="290" Height="300" x:Name="searchExclude" BorderBrush="Black" BorderThickness="1" Margin="1" DoubleTapped="searchExcludeDoubleTapped">
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="Models:Tag">
                             <StackPanel Orientation="Horizontal">

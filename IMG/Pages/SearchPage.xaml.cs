@@ -233,6 +233,18 @@ namespace IMG.Pages
             Page_SizeChanged(null, null);
         }
 
+        private void searchIncludeDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            ListView listView = (ListView)sender;
+            search.Include.Remove((Tag)listView.SelectedItem);
+        }
+
+        private void searchExcludeDoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            ListView listView = (ListView)sender;
+            search.Exclude.Remove((Tag)listView.SelectedItem);
+        }
+
         private async Task loadFullscreenImage(int index)
         {
             fullScreenImage.Image = imageCol[index];

@@ -46,8 +46,8 @@ namespace IMG
         public App()
         {
             CoreApplication.UnhandledErrorDetected += UnhandledError;
-            //checkDB();
-            //checkFiles();
+            checkDB();
+            checkFiles();
             this.InitializeComponent();
             this.Suspending += OnSuspending;
 
@@ -57,13 +57,14 @@ namespace IMG
                 (sender, args) => Debug.WriteLine(args.Message);
         }
 
+        //if files do no exist, create
         private async void checkFiles()
         {
-            StorageFolder localFolder = Windows.Storage.ApplicationData.Current.LocalFolder;
+            StorageFolder localFolder = ApplicationData.Current.LocalFolder;
             StorageFolder dbFolder;
             try
             {
-                dbFolder = await localFolder.CreateFolderAsync("imgs", CreationCollisionOption.FailIfExists);
+                dbFolder = await localFolder.CreateFolderAsync("imgs", CreationCollisionOption.OpenIfExists);
             }
             catch(System.Exception ex)// folder already exist
             {
@@ -74,13 +75,14 @@ namespace IMG
 
             for (int i = 0; i < 256; i++)
             {
-                await dbFolder.CreateFolderAsync(i.ToString("X2"), CreationCollisionOption.FailIfExists);
+                await dbFolder.CreateFolderAsync(i.ToString("X2"), CreationCollisionOption.OpenIfExists);
             }
         }
 
         private void checkDB()
         {
-            SQLite.SQLiteConnector.initDatabase();
+            if(!SQLite.SQLiteConnector.isDatabaseReady())
+                SQLite.SQLiteConnector.initDatabase();
         }
 
         /// <summary>
