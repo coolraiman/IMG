@@ -13,11 +13,13 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
 using Windows.Devices.Enumeration;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.Storage;
 using Windows.Storage.AccessCache;
+using Windows.Storage.FileProperties;
 using Windows.Storage.Streams;
 using Windows.System;
 using Windows.UI.Core;
@@ -191,12 +193,8 @@ namespace IMG.Pages
                     // Ensure the stream is disposed once the image is loaded
                     using (IRandomAccessStream fileStream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read))
                     {
-                        //byte[] hashValue = crypt.ComputeHash(fileStream.AsStream());
-                        //string hexFile = BitConverter.ToString(hashValue);
-                        //((ImageData)ImageGrid.SelectedItems[i]).Hash = hexFile;
 
                         StorageFolder subFolder = await imgsFolder.GetFolderAsync(img.Hash.Substring(0, 2));
-                        //var item = subFolder.TryGetItemAsync(img.Hash + img.Extension);
                         
                         await file.CopyAsync(subFolder, img.Hash + img.Extension, NameCollisionOption.ReplaceExisting);
                         addedElements.Add(img);
@@ -259,12 +257,15 @@ namespace IMG.Pages
                     if (isDuplicateFile(file.Path))
                         continue;
                     //list of access tokens
-                    //faTokens.Add(Windows.Storage.AccessCache.StorageApplicationPermissions.FutureAccessList.Add(file));
+                    BasicProperties fileProp = await file.GetBasicPropertiesAsync();
+
                     imageCol.Add(new ImageData()
                     {
                         Name = file.Name,
                         Hash = "",
+                        Size = fileProp.Size,
                         Extension = file.FileType,
+                        
                         FaToken = StorageApplicationPermissions.FutureAccessList.Add(file)
                     }) ;
 
@@ -478,6 +479,11 @@ namespace IMG.Pages
             await FolderUtility.deleteAllImages();
             SQLiteConnector.initDatabase();
             this.Frame.Navigate(typeof(UploadPage));
+        }
+
+        private void MenuFlyoutExit_Click(object sender, RoutedEventArgs e)
+        {
+            CoreApplication.Exit();
         }
     }
 

@@ -349,5 +349,25 @@ namespace IMG.Pages
         {
             this.Frame.Navigate(typeof(UploadPage));
         }
+
+        private void sortParamChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (imageCol == null || imageCol.Count == 0)
+                return;
+
+            int selectedParam = comboBoxSortBy.SelectedIndex;
+            switch (selectedParam) 
+            {
+                case 0:
+                    imageCol.OrderBy(x => x.Hash);
+                    break;
+                case 1:
+                    imageCol.OrderBy(x => x.Name);
+                    break;
+                case 2:
+                    imageCol.OrderBy(x => x.Size);
+                    break;
+            }
+        }
     }
 }

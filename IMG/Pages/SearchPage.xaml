@@ -66,9 +66,16 @@
             </StackPanel>
             <StackPanel Orientation="Vertical" Width="auto">
                 <StackPanel x:Name="orderParam" Orientation="Horizontal">
-                    <TextBlock x:Name="OrderType" Text="order by "></TextBlock>
+                    <TextBlock  Text="sort by " VerticalAlignment="Center"></TextBlock>
+                    <ComboBox x:Name="comboBoxSortBy" SelectedIndex="0" Margin="2" SelectionChanged="sortParamChanged">
+                        <ComboBoxItem Content="Hash"></ComboBoxItem>
+                        <ComboBoxItem Content="File Name"></ComboBoxItem>
+                        <ComboBoxItem Content="File Size"></ComboBoxItem>
+                        <ComboBoxItem Content="Number of tags"></ComboBoxItem>
+                    </ComboBox>
+                    <TextBlock Text="order by " VerticalAlignment="Center"></TextBlock>
                     <ComboBox SelectedIndex="0" Margin="2">
-                        <ComboBoxItem Content="Ascending"></ComboBoxItem>
+                        <ComboBoxItem Content="Ascending" ></ComboBoxItem>
                         <ComboBoxItem Content="Descending"></ComboBoxItem>
                     </ComboBox>
                 </StackPanel>

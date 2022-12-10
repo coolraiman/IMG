@@ -19,7 +19,7 @@
         </Grid.RowDefinitions>
         <MenuBar VerticalAlignment="Top" Grid.Row="0">
             <MenuBarItem Title="File">
-
+                <MenuFlyoutItem Text="Exit" Click="MenuFlyoutExit_Click"></MenuFlyoutItem>
             </MenuBarItem>
             <MenuBarItem Title="Debug">
                 <MenuFlyoutItem Text="Delete all" Click="MenuFlyoutDelete_Click"></MenuFlyoutItem>

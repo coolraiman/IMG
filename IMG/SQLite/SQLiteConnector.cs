@@ -78,7 +78,7 @@ namespace IMG.SQLite
             string[] dropTable = { "DROP TABLE IF EXISTS ImagesTags", "DROP TABLE IF EXISTS tags" , "DROP TABLE IF EXISTS categories", "DROP TABLE IF EXISTS images" };
             string[] createTable =
             {
-                "CREATE TABLE images(Hash TEXT PRIMARY KEY, Extension TEXT, Name TEXT)",
+                "CREATE TABLE images(Hash TEXT PRIMARY KEY, Extension TEXT, Name TEXT, SIZE INT)",
                 "CREATE TABLE categories(Name TEXT PRIMARY KEY, Description TEXT)",
                 "CREATE TABLE tags(NAME TEXT PRIMARY KEY NOT NULL,DESCRIPTION TEXT,COLLECTIONNAME TEXT)",
                 "CREATE TABLE ImagesTags(ID INTEGER PRIMARY KEY, ImageHash TEXT,TagName TEXT,FOREIGN KEY (ImageHash) REFERENCES images(Hash),FOREIGN KEY (TagName) REFERENCES tags(Name))"
@@ -107,6 +107,7 @@ namespace IMG.SQLite
 
             List<Tag> tags = new List<Tag>
             {
+                new Tag("everything", "system reserved"),
                 new Tag("chat", "l'animale"),
                 new Tag("chien", "l'animale"),
                 new Tag("poule", "l'animale")
@@ -128,19 +129,23 @@ namespace IMG.SQLite
                     {
                         foreach (ImageData img in images)
                         {
+                            img.Tags.Add(new Tag("everything", "system reserved"));
                             SQLiteParameter p1 = new SQLiteParameter("@IHash", System.Data.DbType.String);
                             SQLiteParameter p2 = new SQLiteParameter("@IExtension", System.Data.DbType.String);
                             SQLiteParameter p3 = new SQLiteParameter("@IName", System.Data.DbType.String);
-                            using (SQLiteCommand cmd = new SQLiteCommand($"INSERT INTO images(Hash, Extension, Name) VALUES(@IHash,@IExtension, @IName)", tra.Connection))
+                            SQLiteParameter p4 = new SQLiteParameter("@ISize", System.Data.DbType.UInt64);
+                            using (SQLiteCommand cmd = new SQLiteCommand($"INSERT INTO images(Hash, Extension, Name, Size) VALUES(@IHash,@IExtension, @IName, @ISize)", tra.Connection))
                             {
 
                                 cmd.Parameters.Add(p1);
                                 cmd.Parameters.Add(p2);
                                 cmd.Parameters.Add(p3);
+                                cmd.Parameters.Add(p4);
 
                                 p1.Value = img.Hash;
                                 p2.Value = img.Extension;
                                 p3.Value = img.Name;
+                                p4.Value = img.Size;
                                 cmd.ExecuteNonQuery();
                             }
 
@@ -302,10 +307,9 @@ namespace IMG.SQLite
             SQLiteConnection con = getConnection();
             con.Open();
             //main command, get everything if no args
-            var cmd = new SQLiteCommand(con)
-            {//                                                                                                             join
-                CommandText = "SELECT Images.hash, Images.extension, Images.name, TagName FROM IMAGES, ImagesTags WHERE Images.hash = ImageHash "
-            };
+            var cmd = new SQLiteCommand(con);
+
+            cmd.CommandText = "SELECT Images.hash, Images.extension, Images.name, Images.size, TagName FROM IMAGES, ImagesTags WHERE Images.hash = ImageHash ";
 
             if (includeArgs.Count > 0)
             {
@@ -338,17 +342,18 @@ namespace IMG.SQLite
                     {
                         Hash = rdr.GetString(0),
                         Extension = rdr.GetString(1),
-                        Name = rdr.GetString(2)
+                        Name = rdr.GetString(2),
+                        Size = (ulong)rdr.GetInt64(3),
+                        Tags = new System.Collections.ObjectModel.ObservableCollection<Tag>()
                     };
-                    img.Tags = new System.Collections.ObjectModel.ObservableCollection<Tag>
-                    {
-                        new Tag(rdr.GetString(3))
-                    };
+                    if (rdr.GetString(4) != "everything")
+                        img.Tags.Add(new Tag(rdr.GetString(4)));
+
                     images.Add(img);
                 }
                 else
                 {
-                    images[images.Count - 1].Tags.Add(new Tag(rdr.GetString(3)));
+                    images[images.Count - 1].Tags.Add(new Tag(rdr.GetString(4)));
                 }
             }
 

@@ -18,7 +18,7 @@ namespace IMG.Models
 
         public string Hash { get; set; }//key
         public string Extension { get; set; }
-        public long Size { get; set; }
+        public ulong Size { get; set; }
         public string Name { get; set; }
         public byte Rating { get; set; }
         public bool Favorite { get; set; }
