@@ -78,7 +78,9 @@ namespace IMG.SQLite
             string[] dropTable = { "DROP TABLE IF EXISTS ImagesTags", "DROP TABLE IF EXISTS tags" , "DROP TABLE IF EXISTS categories", "DROP TABLE IF EXISTS images" };
             string[] createTable =
             {
-                "CREATE TABLE images(Hash TEXT PRIMARY KEY, Extension TEXT, Name TEXT, SIZE INT)",
+                "CREATE TABLE images(Hash TEXT PRIMARY KEY, Extension TEXT, Name TEXT, SIZE INT, Rating TINYINT, Favorite BOOLEAN, Views INT, DateAdded DATETIME," +
+                " DateTaken DATETIME, Height INT, Width INT, Orientation TINYINT, CameraManufacturer TEXT, CameraModel TEXT, Latitude DOUBLE, Longitude DOUBLE)",
+
                 "CREATE TABLE categories(Name TEXT PRIMARY KEY, Description TEXT)",
                 "CREATE TABLE tags(NAME TEXT PRIMARY KEY NOT NULL,DESCRIPTION TEXT,COLLECTIONNAME TEXT)",
                 "CREATE TABLE ImagesTags(ID INTEGER PRIMARY KEY, ImageHash TEXT,TagName TEXT,FOREIGN KEY (ImageHash) REFERENCES images(Hash),FOREIGN KEY (TagName) REFERENCES tags(Name))"
@@ -125,27 +127,36 @@ namespace IMG.SQLite
                 
                 using (var tra = con.BeginTransaction())
                 {
+                    //Hash TEXT PRIMARY KEY, Extension TEXT, Name TEXT, SIZE INT, Rating TINYINT, Favorite BOOLEAN, Views INT, DateAdded DATETIME," +
+                    //" DateTaken DATETIME, Height INT, Width INT, Orientation TINYINT, CameraManufacturer TEXT, CameraModel TEXT, Latitude DOUBLE, Longitude DOUBLE)"
                     try
                     {
                         foreach (ImageData img in images)
                         {
                             img.Tags.Add(new Tag("everything", "system reserved"));
-                            SQLiteParameter p1 = new SQLiteParameter("@IHash", System.Data.DbType.String);
-                            SQLiteParameter p2 = new SQLiteParameter("@IExtension", System.Data.DbType.String);
-                            SQLiteParameter p3 = new SQLiteParameter("@IName", System.Data.DbType.String);
-                            SQLiteParameter p4 = new SQLiteParameter("@ISize", System.Data.DbType.UInt64);
-                            using (SQLiteCommand cmd = new SQLiteCommand($"INSERT INTO images(Hash, Extension, Name, Size) VALUES(@IHash,@IExtension, @IName, @ISize)", tra.Connection))
+                            using (SQLiteCommand cmd = new SQLiteCommand(
+                                "INSERT INTO images(Hash, Extension, Name, Size, Rating, Favorite, Views, DateAdded, DateTaken, Height, Width, Orientation, CameraManufacturer, " +
+                                    "CameraModel, Latitude, Longitude) " +
+                                "VALUES(@IHash, @IExtension, @IName, @ISize, @IRating, @IFavorite, @IViews, @IDateAdded, @IDateTaken, @IHeight, @IWidth, @IOrientation, " +
+                                "@ICameraManufacturer, @ICameraModel, @ILatitude, @ILongitude)", tra.Connection))
                             {
+                                cmd.Parameters.AddWithValue("@IHash", img.Hash);
+                                cmd.Parameters.AddWithValue("@IExtension", img.Extension);
+                                cmd.Parameters.AddWithValue("@IName", img.Name);
+                                cmd.Parameters.AddWithValue("@ISize", img.Size);
+                                cmd.Parameters.AddWithValue("@IRating", img.Rating);
+                                cmd.Parameters.AddWithValue("@IFavorite", img.Favorite);
+                                cmd.Parameters.AddWithValue("@IViews", img.Views);
+                                cmd.Parameters.AddWithValue("@IDateAdded", img.DateAdded);
+                                cmd.Parameters.AddWithValue("@IDateTaken", img.DateTaken);
+                                cmd.Parameters.AddWithValue("@IHeight", img.Height);
+                                cmd.Parameters.AddWithValue("@IWidth", img.Width);
+                                cmd.Parameters.AddWithValue("@IOrientation", (ushort)img.Orientation);
+                                cmd.Parameters.AddWithValue("@ICameraManufacturer", img.CameraManufacturer);
+                                cmd.Parameters.AddWithValue("@ICameraModel", img.CameraModel);
+                                cmd.Parameters.AddWithValue("@ILatitude", 5.3d);
+                                cmd.Parameters.AddWithValue("@ILongitude", 4.5d);
 
-                                cmd.Parameters.Add(p1);
-                                cmd.Parameters.Add(p2);
-                                cmd.Parameters.Add(p3);
-                                cmd.Parameters.Add(p4);
-
-                                p1.Value = img.Hash;
-                                p2.Value = img.Extension;
-                                p3.Value = img.Name;
-                                p4.Value = img.Size;
                                 cmd.ExecuteNonQuery();
                             }
 
@@ -309,16 +320,22 @@ namespace IMG.SQLite
             //main command, get everything if no args
             var cmd = new SQLiteCommand(con);
 
-            cmd.CommandText = "SELECT Images.hash, Images.extension, Images.name, Images.size, TagName FROM IMAGES, ImagesTags WHERE Images.hash = ImageHash ";
+            cmd.CommandText = "SELECT Images.hash, Images.extension, Images.name, Images.size, Images.Rating, Images.Favorite, Images.Views, Images.DateAdded, Images.DateTaken, " +
+                    "Images.Height, Images.Width, Images.Orientation, Images.CameraManufacturer, Images.CameraModel, Images.Latitude, Images.Longitude, TagName " +
+                "FROM IMAGES, ImagesTags " +
+                "WHERE Images.hash = ImageHash ";
 
             if (includeArgs.Count > 0)
             {
                 cmd.CommandText += " AND Images.hash IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
                 for (int i = 0; i < includeArgs.Count - 1; i++)
                 {
-                    cmd.CommandText += " TagName = '" + includeArgs[i] + "' OR ";
+                    cmd.CommandText += " TagName = @include" + i.ToString() + " OR ";
+                    cmd.Parameters.AddWithValue("@include" + i.ToString(), includeArgs[i]);
                 }
-                cmd.CommandText += " TagName = '" + includeArgs[includeArgs.Count - 1] + "') ";
+                cmd.CommandText += " TagName = @include" + (includeArgs.Count - 1).ToString() + ") ";
+                cmd.Parameters.AddWithValue("@include" + (includeArgs.Count - 1).ToString(), includeArgs[includeArgs.Count - 1]);
+                
                 cmd.CommandText += " GROUP BY ImageHash HAVING COUNT(*) = " + includeArgs.Count.ToString() + ")";
             }
                 
@@ -327,9 +344,11 @@ namespace IMG.SQLite
                 cmd.CommandText += " AND Images.hash NOT IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
                 for (int i = 0; i < excludeArgs.Count - 1; i++)
                 {
-                    cmd.CommandText += " TagName = '" + excludeArgs[i] + "' OR ";
+                    cmd.CommandText += " TagName = @exclude" + i.ToString() + " OR ";
+                    cmd.Parameters.AddWithValue("@exclude" + i.ToString(), excludeArgs[i]);
                 }
-                cmd.CommandText += " TagName = '" + excludeArgs[excludeArgs.Count - 1] + "'))";
+                cmd.CommandText += " TagName = @include" + (excludeArgs.Count - 1).ToString() + "))";
+                cmd.Parameters.AddWithValue("@include" + (excludeArgs.Count - 1).ToString(), excludeArgs[excludeArgs.Count - 1]);
             }
 
             var rdr = await cmd.ExecuteReaderAsync();
@@ -344,9 +363,21 @@ namespace IMG.SQLite
                         Extension = rdr.GetString(1),
                         Name = rdr.GetString(2),
                         Size = (ulong)rdr.GetInt64(3),
+                        Rating = rdr.GetByte(4),
+                        Favorite = rdr.GetBoolean(5),
+                        Views = rdr.GetInt32(6),
+                        DateAdded = rdr.GetDateTime(7),
+                        DateTaken = rdr.GetDateTime(8),
+                        Height = (uint)rdr.GetInt64(9),
+                        Width = (uint)rdr.GetInt32(10),
+                        Orientation = (Windows.Storage.FileProperties.PhotoOrientation)rdr.GetInt16(11),
+                        CameraManufacturer = rdr.GetString(12),
+                        CameraModel = rdr.GetString(13),
+                        //Latitude = rdr.GetDouble(14), crash invalid cast, TODO fix
+                        //Longitude = rdr.GetDouble(15),
                         Tags = new System.Collections.ObjectModel.ObservableCollection<Tag>()
                     };
-                    if (rdr.GetString(4) != "everything")
+                    if (rdr.GetString(16) != "everything")
                         img.Tags.Add(new Tag(rdr.GetString(4)));
 
                     images.Add(img);

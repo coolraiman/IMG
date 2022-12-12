@@ -101,7 +101,7 @@
                                 <StackPanel Margin="1">
                                     <TextBlock Text="{x:Bind File}" />
                                 </StackPanel>
-                                <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="UniformToFill" />
+                                <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="Uniform" />
                             </StackPanel>
                         </DataTemplate>
                     </GridView.ItemTemplate>

@@ -242,6 +242,7 @@ namespace IMG.Pages
             openPicker.FileTypeFilter.Add(".png");
             openPicker.FileTypeFilter.Add(".jpeg");
             openPicker.FileTypeFilter.Add(".jpg");
+            openPicker.FileTypeFilter.Add(".gif");
 
             // Open the file picker.
             IReadOnlyList<Windows.Storage.StorageFile> files =
@@ -258,6 +259,8 @@ namespace IMG.Pages
                         continue;
                     //list of access tokens
                     BasicProperties fileProp = await file.GetBasicPropertiesAsync();
+                    ImageProperties imgProps = await file.Properties.GetImagePropertiesAsync();
+                    imgProps.PeopleNames.ToList();
 
                     imageCol.Add(new ImageData()
                     {
@@ -265,9 +268,22 @@ namespace IMG.Pages
                         Hash = "",
                         Size = fileProp.Size,
                         Extension = file.FileType,
-                        
+                        Rating = 0,
+                        Favorite = false,
+                        Views = 0,
+                        DateAdded = DateTime.Now,
+                        DateTaken = imgProps.DateTaken.DateTime,
+                        Height = imgProps.Height,
+                        Width = imgProps.Width,
+                        Orientation = imgProps.Orientation,
+                        CameraManufacturer = imgProps.CameraManufacturer,
+                        CameraModel = imgProps.CameraModel,
+                        Latitude = imgProps.Latitude,
+                        Longitude = imgProps.Longitude,
+                        tempTags = new ObservableCollection<string>(imgProps.PeopleNames),
                         FaToken = StorageApplicationPermissions.FutureAccessList.Add(file)
                     }) ;
+                    
 
                     // Open a stream for the selected files.
                     // The 'using' block ensures the stream is disposed
@@ -281,10 +297,11 @@ namespace IMG.Pages
                         //file.Path = "D:\\Yuru Yuri\\0f60c26056fb2288b244fdd35d3d9a94.jpg"
                         await bitmapImage.SetSourceAsync(fileStream);
 
-                        bitmapImage.DecodePixelWidth = 150;
+                        bitmapImage.DecodePixelWidth = 80;
 
                         //find the ImageComponent
                         Image img = (Image)FindChild(ImageGrid.ContainerFromIndex(ImageGrid.Items.Count - 1), typeof(Image));
+                        
                         //safety check
                         if (img != null)
                             img.Source = bitmapImage;
