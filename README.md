@@ -9,7 +9,8 @@ The objective of this program is to deepen my learning of UWP, it was not made t
 - Extract image metada to add more search and order parameters
 - Allow user to create tags and use multiple tags on an image
 - Search images by including and excluding tags
-- convert image metadata list of identified person to tags
+- Convert image metadata list of identified person to tags
+- Fullscreen image viewer
 
 
 ### Upload page example
