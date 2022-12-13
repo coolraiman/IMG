@@ -41,6 +41,7 @@ namespace IMG.Pages
         private int navIndex = -1;
         private List<Tag> tagsList;
         private ImageSearch search = new ImageSearch();
+        private bool fullscreenMode = false;
 
         public event PropertyChangedEventHandler PropertyChanged;
         public SearchPage()
@@ -172,16 +173,21 @@ namespace IMG.Pages
             double height = Window.Current.Bounds.Height - topUI.Height;
             if (height < 0)
                 return;
-            //ImageGrid.Height = height;
-            //FullScreenPanel.Height = height;
+            ImageGrid.Height = height;
+            FullScreenPanel.Height = height;
+
+            if (!fullscreenMode)
+            {
+                var panel = (ItemsWrapGrid)ImageGrid.ItemsPanelRoot;
+                panel.MaximumRowsOrColumns = (int)(e.NewSize.Width - searchPanel.ActualWidth) / 110;
+            }
+            else
+            {
+                FullscreenImage_UI.Width = Window.Current.Bounds.Width - searchPanel.ActualWidth;
+                FullscreenImage_UI.Height = Window.Current.Bounds.Height - topUI.ActualHeight;
+            }
         }
 
-        private void ImageGridSizeChanged(object sender, Windows.UI.Xaml.SizeChangedEventArgs e)
-        {
-            var panel = (ItemsWrapGrid)ImageGrid.ItemsPanelRoot;
-            panel.MaximumRowsOrColumns = (int)e.NewSize.Width / 120;
-
-        }
         private void showFlyout(object sender, RightTappedRoutedEventArgs e)
         {
             if (ImageGrid.SelectedItems.Count == 0)
@@ -225,7 +231,7 @@ namespace IMG.Pages
 
         private async void ImageGrid_DoubleTap(object sender, DoubleTappedRoutedEventArgs e)
         {
-            if (isFullscreenMode() || !enterFullScreenMode())
+            if (fullscreenMode || !enterFullScreenMode())
                 return;
 
             await loadFullscreenImage(ImageGrid.SelectedIndex);
@@ -327,6 +333,7 @@ namespace IMG.Pages
             ImageGrid.Visibility = Visibility.Collapsed;
             searchPanel.Visibility = Visibility.Collapsed;
             FullScreenPanel.Visibility = Visibility.Visible;
+            fullscreenMode = true;
             return true;
         }
 
@@ -336,14 +343,10 @@ namespace IMG.Pages
             searchPanel.Visibility = Visibility.Visible;
             FullScreenPanel.Visibility = Visibility.Collapsed;
             ImageGrid.SelectedIndex = navIndex;
+            fullscreenMode = false;
         }
 
-        private bool isFullscreenMode()
-        {
-            if (ImageGrid.Visibility == Visibility.Visible)
-                return false;
-            return true;
-        }
+
 
         public void OnClickUpload(object sender, RoutedEventArgs e)
         {

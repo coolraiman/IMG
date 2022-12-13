@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Models="using:IMG.Models"
-    mc:Ignorable="d"
+    mc:Ignorable="d" SizeChanged="Page_SizeChanged"
     Loaded="Page_Loaded"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     
@@ -22,8 +22,8 @@
             Orientation="Horizontal">
             <Button Content="Upload" Click="OnClickUpload" Margin="2"></Button>
         </StackPanel>
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Width="auto" x:Name="searchPanel">
-            <StackPanel Orientation="Vertical" Width="300">
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Width="auto">
+            <StackPanel x:Name="searchPanel" Orientation="Vertical" Width="300">
                 <TextBlock Text="Search window" HorizontalAlignment="Center" Margin="1"></TextBlock>
                 <AutoSuggestBox Name="searchIncludeAutoSuggest"
                                 TextChanged="AutoSuggestBox_TextChanged"
@@ -132,7 +132,7 @@
             </StackPanel>
             <Grid Width="auto" Height="auto">
                 <ScrollViewer x:Name="ImageViewScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" ZoomMode="Enabled">
-                    <Image x:Name="FullscreenImage_UI" HorizontalAlignment="Center" VerticalAlignment="Center"></Image>
+                    <Image x:Name="FullscreenImage_UI" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform"></Image>
                 </ScrollViewer>
             </Grid>
         </StackPanel>

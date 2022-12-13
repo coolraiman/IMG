@@ -49,6 +49,7 @@ namespace IMG.Pages
         private int navIndex = -1;
         private List<Tag> tagsList;
         private List<ImageData> duplicates;
+        private bool fullscreenMode = false;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -212,8 +213,8 @@ namespace IMG.Pages
 
         private void ImageGridSizeChanged(object sender, Windows.UI.Xaml.SizeChangedEventArgs e)
         {
-            var panel = (ItemsWrapGrid)ImageGrid.ItemsPanelRoot;
-            panel.MaximumRowsOrColumns = (int)e.NewSize.Width / 120;
+            //var panel = (ItemsWrapGrid)ImageGrid.ItemsPanelRoot;
+            //panel.MaximumRowsOrColumns = (int)e.NewSize.Width / 110;
             
         }
 
@@ -224,6 +225,17 @@ namespace IMG.Pages
                 return;
             ImageGrid.Height = height;
             FullScreenPanel.Height = height;
+
+            if (!fullscreenMode)
+            {
+                var panel = (ItemsWrapGrid)ImageGrid.ItemsPanelRoot;
+                panel.MaximumRowsOrColumns = (int)e.NewSize.Width / 110;
+            }
+            else
+            {
+                FullscreenImage_UI.Width = Window.Current.Bounds.Width - tagPanel.ActualWidth;
+                FullscreenImage_UI.Height = Window.Current.Bounds.Height - topUI.ActualHeight;
+            }
         }
 
         private async void GetPhoto(object sender, RoutedEventArgs e)
@@ -388,7 +400,7 @@ namespace IMG.Pages
 
         private async void ImageGrid_DoubleTap(object sender, DoubleTappedRoutedEventArgs e)
         {
-            if (isFullscreenMode() || !enterFullScreenMode())
+            if (fullscreenMode || !enterFullScreenMode())
                 return;
 
             await loadFullscreenImage(ImageGrid.SelectedIndex);
@@ -443,9 +455,14 @@ namespace IMG.Pages
             {
                 return;
             }
+            else if(imageCol.Count == 0)
+            {
+                exitFullScreenMode();
+                return;
+            }
             else if(imageCol.Count == 1)
             {
-                return;
+                navigation = Navigation.NONE;
             }
             else if(navIndex + (int)navigation < 0)
             {
@@ -474,6 +491,7 @@ namespace IMG.Pages
             navIndex = ImageGrid.SelectedIndex;
             ImageGrid.Visibility = Visibility.Collapsed;
             FullScreenPanel.Visibility = Visibility.Visible;
+            fullscreenMode = true;
             return true;
         }
 
@@ -482,6 +500,7 @@ namespace IMG.Pages
             ImageGrid.Visibility = Visibility.Visible;
             FullScreenPanel.Visibility = Visibility.Collapsed;
             ImageGrid.SelectedIndex = navIndex;
+            fullscreenMode = false;
         }
 
         private bool isFullscreenMode()
@@ -502,11 +521,41 @@ namespace IMG.Pages
         {
             CoreApplication.Exit();
         }
+
+        private void ConvertMetaDataToTag(object sender, RoutedEventArgs e)
+        {
+            foreach(ImageData img in imageCol)
+            {
+                foreach(string s in img.tempTags)
+                {
+                    int index = tagsList.FindIndex(t => t.Name == s);
+                    if (index >= 0)
+                    {
+                        img.Tags.Add(tagsList[index]);
+                    }
+                    else
+                    {
+                        Tag t = new Models.Tag(s);
+                        if(SQLiteConnector.CreateTag(t))
+                        {
+                            tagsList = SQLiteConnector.GetTags();
+                        }
+                    }
+                }
+            }
+        }
+
+        private async void DeleteFullscreenImage(object sender, RoutedEventArgs e)
+        {
+            imageCol.RemoveAt(navIndex);
+            await NavigateFullScreen(Navigation.NONE);
+        }
     }
 
     internal enum Navigation
     {
         LEFT = -1,
-        RIGHT = 1
+        RIGHT = 1,
+        NONE = 0
     }
 }

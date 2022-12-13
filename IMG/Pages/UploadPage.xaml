@@ -33,6 +33,7 @@
             <Button Click="GetPhoto" Content="get images" Margin="2"/>
             <Button Click="ScanDuplicate" Content="Scan duplicate" Margin="2"/>
             <Button Click="RemoveDuplicate" Content="Remove Duplicate" Margin="2"/>
+            <Button Click="ConvertMetaDataToTag" Content="Convert metadata to tag" Margin="2" ToolTipService.ToolTip="Import the list of people tagged by the camera as regular tags"></Button>
             <Button Click="ClickSearch" Content="Search Page" Margin="2"/>
         </StackPanel>
         
@@ -60,14 +61,14 @@
                         <StackPanel Margin="1">
                             <TextBlock Text="{x:Bind File}" />
                         </StackPanel>
-                        <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="UniformToFill" />
+                        <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="Uniform" />
                     </StackPanel>
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
         <StackPanel Orientation="Horizontal" Visibility="Collapsed" x:Name="FullScreenPanel" Grid.Row="1">
-            <StackPanel Orientation="Vertical" Width="300" BorderBrush="Black" BorderThickness="1">
-                <Button Content="Delete"></Button>
+            <StackPanel x:Name="tagPanel" Orientation="Vertical" Width="300" BorderBrush="Black" BorderThickness="1">
+                <Button Content="Delete" Click="DeleteFullscreenImage"></Button>
                 <TextBlock Text="Tags"></TextBlock>
                 <AutoSuggestBox x:Name="AutoSuggestTag" PlaceholderText="Search" QueryIcon="Find"
                                 TextChanged="AutoSuggestBox_TextChanged"
@@ -89,7 +90,7 @@
             </StackPanel>
             <Grid Width="auto" Height="auto">
                 <ScrollViewer x:Name="ImageViewScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" ZoomMode="Enabled">
-                    <Image x:Name="FullscreenImage_UI" HorizontalAlignment="Center" VerticalAlignment="Center"></Image>
+                    <Image x:Name="FullscreenImage_UI" HorizontalAlignment="Center" VerticalAlignment="Center" Stretch="Uniform"></Image>
                 </ScrollViewer>
             </Grid>
         </StackPanel>

@@ -49,6 +49,7 @@ namespace IMG
             checkDB();
             checkFiles();
             this.InitializeComponent();
+            //SqliteEngine.UseWinSqlite3();
             this.Suspending += OnSuspending;
 
             // This can be useful for debugging XAML:
