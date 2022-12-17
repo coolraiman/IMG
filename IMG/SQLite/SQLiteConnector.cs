@@ -11,11 +11,19 @@ using System.Data.SqlClient;
 using System.ComponentModel;
 using IMG.Models;
 using System.Xml.Linq;
+using IMG.Wrappers;
 
 namespace IMG.SQLite
 {
+    /// <summary>
+    /// This class manage every interaction with the SQL database
+    /// </summary>
     public static class SQLiteConnector
     {
+        /// <summary>
+        /// get the connection *unsafe
+        /// </summary>
+        /// <returns></returns>
         private static SQLiteConnection getConnection()
         {
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
@@ -26,12 +34,20 @@ namespace IMG.SQLite
             return con;
         }
 
+        /// <summary>
+        /// build the connection string
+        /// </summary>
+        /// <returns></returns>
         private static string ConnectionString()
         {
             string path = ApplicationData.Current.LocalFolder.Path + "\\db.db";
             return $@"URI=file:{path}";
         }
 
+        /// <summary>
+        /// check the current version of the SQLite database
+        /// </summary>
+        /// <returns></returns>
         public static string checkVersion()
         {
             string cs = "Data Source=:memory:";
@@ -46,6 +62,10 @@ namespace IMG.SQLite
             return "SQLite version:" + version;
         }
 
+        /// <summary>
+        /// verify if the database contains all the table (on every launch)
+        /// </summary>
+        /// <returns></returns>
         public static bool isDatabaseReady()
         {
             bool valid = true;
@@ -73,17 +93,21 @@ namespace IMG.SQLite
             return valid;
         }
 
+        /// <summary>
+        /// Create the tables and the basic system reserved tags
+        /// </summary>
         public static void initDatabase()
         {
-            string[] dropTable = { "DROP TABLE IF EXISTS ImagesTags", "DROP TABLE IF EXISTS tags" , "DROP TABLE IF EXISTS categories", "DROP TABLE IF EXISTS images" };
+            string[] dropTable = { "DROP TABLE IF EXISTS ImagesTags", "DROP TABLE IF EXISTS tags" , "DROP TABLE IF EXISTS images" };
             string[] createTable =
             {
                 "CREATE TABLE images(Hash TEXT PRIMARY KEY, Extension TEXT, Name TEXT, SIZE INT, Rating TINYINT, Favorite BOOLEAN, Views INT, DateAdded DATETIME," +
                 " DateTaken DATETIME, Height INT, Width INT, Orientation TINYINT, CameraManufacturer TEXT, CameraModel TEXT, Latitude DOUBLE, Longitude DOUBLE)",
 
-                "CREATE TABLE categories(Name TEXT PRIMARY KEY, Description TEXT)",
-                "CREATE TABLE tags(NAME TEXT PRIMARY KEY NOT NULL,DESCRIPTION TEXT,COLLECTIONNAME TEXT)",
-                "CREATE TABLE ImagesTags(ID INTEGER PRIMARY KEY, ImageHash TEXT,TagName TEXT,FOREIGN KEY (ImageHash) REFERENCES images(Hash),FOREIGN KEY (TagName) REFERENCES tags(Name))"
+                "CREATE TABLE tags(NAME TEXT PRIMARY KEY NOT NULL,DESCRIPTION TEXT, Protected BOOLEAN DEFAULT 0 NOT NULL)",
+                "CREATE TABLE ImagesTags(ID INTEGER PRIMARY KEY, ImageHash TEXT,TagName TEXT,FOREIGN KEY (ImageHash) REFERENCES images(Hash)," +
+                //                                              Keep database integrity, very important
+                    "FOREIGN KEY (TagName) REFERENCES tags(Name) ON DELETE CASCADE)"
 
             };
             using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
@@ -96,7 +120,7 @@ namespace IMG.SQLite
                     {
                         cmd.ExecuteNonQuery();
                     }
-                }
+                }//re create the tables
                 foreach (string c in createTable)
                 {
                     using (SQLiteCommand cmd = new SQLiteCommand(c, con))
@@ -104,20 +128,22 @@ namespace IMG.SQLite
                         cmd.ExecuteNonQuery();
                     }
                 }
-                con.Close();
             }
 
             List<Tag> tags = new List<Tag>
             {
-                new Tag("everything", "system reserved"),
-                new Tag("chat", "l'animale"),
-                new Tag("chien", "l'animale"),
-                new Tag("poule", "l'animale")
+                new Tag("everything", "system reserved"),//very important hiden tags for the search function optimisation
+                new Tag("animated", "system reserved"),
             };
-
-            CreateTags(tags);
+            //create important tags
+            CreateProtectedTags(tags);
         }
 
+        /// <summary>
+        /// Add an image to the database with most of its data
+        /// </summary>
+        /// <param name="images"></param>
+        /// <returns></returns>
         public static int addImages(List<ImageData> images)
         {
             int rows = 0;
@@ -127,13 +153,12 @@ namespace IMG.SQLite
                 
                 using (var tra = con.BeginTransaction())
                 {
-                    //Hash TEXT PRIMARY KEY, Extension TEXT, Name TEXT, SIZE INT, Rating TINYINT, Favorite BOOLEAN, Views INT, DateAdded DATETIME," +
-                    //" DateTaken DATETIME, Height INT, Width INT, Orientation TINYINT, CameraManufacturer TEXT, CameraModel TEXT, Latitude DOUBLE, Longitude DOUBLE)"
                     try
                     {
                         foreach (ImageData img in images)
-                        {
+                        {//add the hidden tag to the image
                             img.Tags.Add(new Tag("everything", "system reserved"));
+                            //standard insert sql command
                             using (SQLiteCommand cmd = new SQLiteCommand(
                                 "INSERT INTO images(Hash, Extension, Name, Size, Rating, Favorite, Views, DateAdded, DateTaken, Height, Width, Orientation, CameraManufacturer, " +
                                     "CameraModel, Latitude, Longitude) " +
@@ -183,7 +208,10 @@ namespace IMG.SQLite
             }
             return rows;
         }
-
+        /// <summary>
+        /// get every tags
+        /// </summary>
+        /// <returns></returns>
         public static  List<Tag> GetTags()
         {
             List<Tag> tags = new List<Tag>();
@@ -196,7 +224,7 @@ namespace IMG.SQLite
                     {
                         while (rdr.Read())
                         {
-                            tags.Add(new Tag(rdr.GetString(0), rdr.GetString(1)));
+                            tags.Add(new Tag(rdr.GetString(0), rdr.GetString(1), rdr.GetBoolean(2)));
                         }
                     }
 
@@ -205,7 +233,38 @@ namespace IMG.SQLite
             return tags;
         }
 
-        public static bool CreateTags(List<Tag> tags)
+        /// <summary>
+        /// same as getTags but with wrapped tags
+        /// </summary>
+        /// <returns></returns>
+        public static List<TagWrapper> GetWrappedTags()
+        {
+            List<TagWrapper> tags = new List<TagWrapper>();
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                using (SQLiteCommand cmd = new SQLiteCommand("SELECT * FROM Tags", con))
+                {
+                    using (var rdr = cmd.ExecuteReader())
+                    {
+                        while (rdr.Read())
+                        {
+                            tags.Add(new TagWrapper(
+                                new Tag(rdr.GetString(0), rdr.GetString(1), rdr.GetBoolean(2))
+                                ));
+                        }
+                    }
+
+                }
+            }
+            return tags;
+        }
+        /// <summary>
+        /// this method is the only way to create protected tags for system reserved tags
+        /// </summary>
+        /// <param name="tags"></param>
+        /// <returns></returns>
+        private static bool CreateProtectedTags(List<Tag> tags)
         {
             int result = 0;
             using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
@@ -213,7 +272,7 @@ namespace IMG.SQLite
                 con.Open();
                 foreach (Tag tag in tags)
                 {
-                    using (SQLiteCommand cmd = new SQLiteCommand("INSERT INTO tags(Name, Description) VALUES(@name, @description)", con))
+                    using (SQLiteCommand cmd = new SQLiteCommand("INSERT INTO tags(Name, Description, Protected) VALUES(@name, @description, 1)", con))
                     {
                         cmd.Parameters.AddWithValue("@name", tag.Name);
                         cmd.Parameters.AddWithValue("@description", tag.Description);
@@ -225,6 +284,36 @@ namespace IMG.SQLite
             return result != 0;
         }
 
+        /// <summary>
+        /// create standard tags
+        /// </summary>
+        /// <param name="tags"></param>
+        /// <returns></returns>
+        public static bool CreateTags(List<Tag> tags)
+        {
+            int result = 0;
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                foreach (Tag tag in tags)
+                {
+                    using (SQLiteCommand cmd = new SQLiteCommand("INSERT INTO tags(Name, Description, Protected) VALUES(@name, @description, 0)", con))
+                    {
+                        cmd.Parameters.AddWithValue("@name", tag.Name);
+                        cmd.Parameters.AddWithValue("@description", tag.Description);
+                        cmd.Prepare();
+                        result = cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            return result != 0;
+        }
+
+        /// <summary>
+        /// Create a single tag
+        /// </summary>
+        /// <param name="tag"></param>
+        /// <returns></returns>
         public static bool CreateTag(Tag tag)
         {
             bool result = false;
@@ -242,6 +331,91 @@ namespace IMG.SQLite
             return result;
         }
 
+        /// <summary>
+        /// delete a tag from the database if it is not protected
+        /// also remove every references to that tag
+        /// </summary>
+        /// <param name="tag"></param>
+        /// <returns></returns>
+        public static bool DeleteTag(Tag tag)
+        {
+            if (tag.ProtectedTag)
+                return false;
+            bool deleted = false;
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                
+                //imageYags cascade delete will remove any reference to deleted tag
+                using (SQLiteCommand cmd = new SQLiteCommand("DELETE FROM Tags WHERE Name = @name AND Protected = 0", con))
+                {
+                    cmd.Parameters.AddWithValue("@name", tag.Name);
+                        
+                    deleted = cmd.ExecuteNonQuery() != 0;
+                }
+
+            }
+
+            return deleted;
+        }
+
+        public static int DeleteTags(List<Tag> tags)
+        {
+            int deletedRows = 0;
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+
+                foreach (Tag tag in tags)
+                {
+
+                    if (tag.ProtectedTag)
+                        continue;
+                    //imageTags cascade delete will remove any reference to deleted tag
+                    using (SQLiteCommand cmd = new SQLiteCommand("DELETE FROM Tags WHERE Name = @name AND Protected = 0", con))
+                    {
+                        cmd.Parameters.AddWithValue("@name", tag.Name);
+
+                        deletedRows += cmd.ExecuteNonQuery();
+                    }
+                }
+
+            }
+
+            return deletedRows;
+        }
+
+        public static int UpdateTagDescriptions(List<Tag> tags)
+        {
+            int rows = 0;
+
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                foreach (Tag t in tags)
+                {
+                    //imageYags cascade delete will remove any reference to deleted tag
+                    using (SQLiteCommand cmd = new SQLiteCommand(
+                        "UPDATE Tags SET description = @description WHERE Name = @name AND Protected = 0", con))
+                    {
+                        cmd.Parameters.AddWithValue("@description", t.Description);
+                        cmd.Parameters.AddWithValue("@name", t.Name);
+
+                        rows += cmd.ExecuteNonQuery();
+                    }
+                }
+
+            }
+
+            return rows;
+        }
+
+        
+        /// <summary>
+        /// find a tag in the database from its name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns>true if tag exist</returns>
         public static bool TagExist(string name) 
         {
             bool hasRows = false;
@@ -262,6 +436,11 @@ namespace IMG.SQLite
             return hasRows;
         }
 
+        /// <summary>
+        /// find all duplicates from DB
+        /// </summary>
+        /// <param name="images"></param>
+        /// <returns>return the list of ImageData that are duplicate</returns>
         public static List<ImageData> findDuplicateFromList(List<ImageData> images)
         {
             List<ImageData> duplicate = new List<ImageData>();
@@ -288,6 +467,11 @@ namespace IMG.SQLite
             return duplicate;
         }
 
+        /// <summary>
+        /// simplified version of findDuplicateFromList
+        /// </summary>
+        /// <param name="hash"></param>
+        /// <returns>true if duplicate</returns>
         public static bool findDuplicateFromHash(string hash)
         {
             bool duplicate = false;
@@ -310,85 +494,101 @@ namespace IMG.SQLite
             return duplicate;
         }
 
-        //TODO use parameters to make it sql injection safe
+        /// <summary>
+        /// this function find all ImageData who have all the includeArgs and none of the excludeArgs
+        /// </summary>
+        /// <param name="includeArgs"></param>
+        /// <param name="excludeArgs"></param>
+        /// <returns>list of found imageData</returns>
         public static async Task<List<ImageData>> searchImages(List<string> includeArgs, List<string> excludeArgs) 
         {
             List<ImageData> images = new List<ImageData>();
-
-            SQLiteConnection con = getConnection();
-            con.Open();
-            //main command, get everything if no args
-            var cmd = new SQLiteCommand(con);
-
-            cmd.CommandText = "SELECT Images.hash, Images.extension, Images.name, Images.size, Images.Rating, Images.Favorite, Images.Views, Images.DateAdded, Images.DateTaken, " +
-                    "Images.Height, Images.Width, Images.Orientation, Images.CameraManufacturer, Images.CameraModel, Images.Latitude, Images.Longitude, TagName " +
-                "FROM IMAGES, ImagesTags " +
-                "WHERE Images.hash = ImageHash ";
-
-            if (includeArgs.Count > 0)
+            //simplified example of the following query without any args
+            //SELECT Images.*, ImagesTags.TagName FROM IMAGES, ImagesTags HERE Images.hash = ImageHash
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
             {
-                cmd.CommandText += " AND Images.hash IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
-                for (int i = 0; i < includeArgs.Count - 1; i++)
-                {
-                    cmd.CommandText += " TagName = @include" + i.ToString() + " OR ";
-                    cmd.Parameters.AddWithValue("@include" + i.ToString(), includeArgs[i]);
-                }
-                cmd.CommandText += " TagName = @include" + (includeArgs.Count - 1).ToString() + ") ";
-                cmd.Parameters.AddWithValue("@include" + (includeArgs.Count - 1).ToString(), includeArgs[includeArgs.Count - 1]);
-                
-                cmd.CommandText += " GROUP BY ImageHash HAVING COUNT(*) = " + includeArgs.Count.ToString() + ")";
-            }
-                
-            if (excludeArgs.Count > 0)
-            {
-                cmd.CommandText += " AND Images.hash NOT IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
-                for (int i = 0; i < excludeArgs.Count - 1; i++)
-                {
-                    cmd.CommandText += " TagName = @exclude" + i.ToString() + " OR ";
-                    cmd.Parameters.AddWithValue("@exclude" + i.ToString(), excludeArgs[i]);
-                }
-                cmd.CommandText += " TagName = @include" + (excludeArgs.Count - 1).ToString() + "))";
-                cmd.Parameters.AddWithValue("@include" + (excludeArgs.Count - 1).ToString(), excludeArgs[excludeArgs.Count - 1]);
-            }
+                con.Open();
+                var cmd = new SQLiteCommand(con);
+                //base command, get everything if no args
+                cmd.CommandText = "SELECT Images.hash, Images.extension, Images.name, Images.size, Images.Rating, Images.Favorite, Images.Views, Images.DateAdded, Images.DateTaken, " +
+                        "Images.Height, Images.Width, Images.Orientation, Images.CameraManufacturer, Images.CameraModel, Images.Latitude, Images.Longitude, TagName " +
+                    "FROM IMAGES, ImagesTags " +
+                    "WHERE Images.hash = ImageHash ";
 
-            var rdr = await cmd.ExecuteReaderAsync();
-
-            while (rdr.Read())
-            {
-                if(images.Count == 0 || images[images.Count - 1].Hash != rdr.GetString(0))
+                //add subquery with every includeArgs
+                //ex with 2 args, group by allow to only return the hash of image who have every include args
+                //SELECT Images.*, ImagesTags.TagName FROM IMAGES, ImagesTags HERE Images.hash = ImageHash AND
+                ////Images.hash IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE (TagName = arg1 OR TagName = arg2) GROUP BY ImageHash HAVING COUNT(*) = 2)
+                if (includeArgs.Count > 0)
                 {
-                    ImageData img = new ImageData()
+                    cmd.CommandText += " AND Images.hash IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
+                    for (int i = 0; i < includeArgs.Count - 1; i++)
                     {
-                        Hash = rdr.GetString(0),
-                        Extension = rdr.GetString(1),
-                        Name = rdr.GetString(2),
-                        Size = (ulong)rdr.GetInt64(3),
-                        Rating = rdr.GetByte(4),
-                        Favorite = rdr.GetBoolean(5),
-                        Views = rdr.GetInt32(6),
-                        DateAdded = rdr.GetDateTime(7),
-                        DateTaken = rdr.GetDateTime(8),
-                        Height = (uint)rdr.GetInt64(9),
-                        Width = (uint)rdr.GetInt32(10),
-                        Orientation = (Windows.Storage.FileProperties.PhotoOrientation)rdr.GetInt16(11),
-                        CameraManufacturer = rdr.GetString(12),
-                        CameraModel = rdr.GetString(13),
-                        //Latitude = rdr.GetDouble(14), crash invalid cast, TODO fix
-                        //Longitude = rdr.GetDouble(15),
-                        Tags = new System.Collections.ObjectModel.ObservableCollection<Tag>()
-                    };
-                    if (rdr.GetString(16) != "everything")
-                        img.Tags.Add(new Tag(rdr.GetString(4)));
+                        cmd.CommandText += " TagName = @include" + i.ToString() + " OR ";
+                        cmd.Parameters.AddWithValue("@include" + i.ToString(), includeArgs[i]);
+                    }
+                    cmd.CommandText += " TagName = @include" + (includeArgs.Count - 1).ToString() + ") ";
+                    cmd.Parameters.AddWithValue("@include" + (includeArgs.Count - 1).ToString(), includeArgs[includeArgs.Count - 1]);
 
-                    images.Add(img);
+                    cmd.CommandText += " GROUP BY ImageHash HAVING COUNT(*) = " + includeArgs.Count.ToString() + ")";
                 }
-                else
+                //exclude args is simpler and does not depend on include args, images can be searched only by exclusion
+                //ex without include args
+                //SELECT Images.*, ImagesTags.TagName FROM IMAGES, ImagesTags HERE Images.hash = ImageHash AND *(optional include args part)
+                ////Images.hash NOT IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( TagName = arg1 OR TagName = arg2) GROUP BY ImageHash )
+                if (excludeArgs.Count > 0)
                 {
-                    images[images.Count - 1].Tags.Add(new Tag(rdr.GetString(4)));
-                }
-            }
+                    cmd.CommandText += " AND Images.hash NOT IN (SELECT DISTINCT ImageHash FROM ImagesTags WHERE ( ";
+                    for (int i = 0; i < excludeArgs.Count - 1; i++)
+                    {
+                        cmd.CommandText += " TagName = @exclude" + i.ToString() + " OR ";
+                        cmd.Parameters.AddWithValue("@exclude" + i.ToString(), excludeArgs[i]);
+                    }
+                    cmd.CommandText += " TagName = @include" + (excludeArgs.Count - 1).ToString() + ")";
+                    cmd.Parameters.AddWithValue("@include" + (excludeArgs.Count - 1).ToString(), excludeArgs[excludeArgs.Count - 1]);
 
-            con.Close();
+                    cmd.CommandText += " )"; //big optimisation
+                }
+
+                var rdr = await cmd.ExecuteReaderAsync();
+
+                while (rdr.Read())
+                {
+                    if (images.Count == 0 || images[images.Count - 1].Hash != rdr.GetString(0))
+                    {
+                        ImageData img = new ImageData()
+                        {
+                            Hash = rdr.GetString(0),
+                            Extension = rdr.GetString(1),
+                            Name = rdr.GetString(2),
+                            Size = (ulong)rdr.GetInt64(3),
+                            Rating = rdr.GetByte(4),
+                            Favorite = rdr.GetBoolean(5),
+                            Views = rdr.GetInt32(6),
+                            DateAdded = rdr.GetDateTime(7),
+                            DateTaken = rdr.GetDateTime(8),
+                            Height = (uint)rdr.GetInt64(9),
+                            Width = (uint)rdr.GetInt32(10),
+                            Orientation = (Windows.Storage.FileProperties.PhotoOrientation)rdr.GetInt16(11),
+                            CameraManufacturer = rdr.GetString(12),
+                            CameraModel = rdr.GetString(13),
+                            //Latitude = rdr.GetDouble(14), crash invalid cast, TODO fix
+                            //Longitude = rdr.GetDouble(15),
+                            Tags = new System.Collections.ObjectModel.ObservableCollection<Tag>()
+                        };
+                        //hidden tag, do not add
+                        if (rdr.GetString(16) != "everything")
+                            img.Tags.Add(new Tag(rdr.GetString(16)));
+
+                        images.Add(img);
+                    }
+                    else
+                    {
+                        images[images.Count - 1].Tags.Add(new Tag(rdr.GetString(16)));
+                    }
+                }
+                rdr.Close();
+            }
             return images;
         }
 

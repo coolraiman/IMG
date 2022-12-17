@@ -1,4 +1,5 @@
-﻿using IMG.Models;
+﻿using IMG.Dialog;
+using IMG.Models;
 using IMG.SQLite;
 using IMG.Utility;
 using IMG.Wrappers;
@@ -39,13 +40,15 @@ using Windows.UI.Xaml.Navigation;
 namespace IMG.Pages
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// The page to upload new images
     /// </summary>
     public sealed partial class UploadPage : Page
     {
+        //image collection for the image gallery
         private ObservableCollection<ImageData> imageCol;
-        //private ImageData fullScreenImage;
+        
         private FullScreenImage fullScreenImage = new FullScreenImage();
+        //fullscreen navigation index
         private int navIndex = -1;
         private List<Tag> tagsList;
         private List<ImageData> duplicates;
@@ -61,7 +64,9 @@ namespace IMG.Pages
 
             ImageGrid.ItemsSource = imageCol;
             tagsListView.ItemsSource = fullScreenImage.Image.Tags;
+            //escape event
             Window.Current.CoreWindow.CharacterReceived += CoreWindow_CharacterReceived;
+            //right and left arrow event
             Window.Current.CoreWindow.KeyDown += CoreWindow_KeyDown;
         }
 
@@ -75,11 +80,9 @@ namespace IMG.Pages
         private void AutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             // Only get results when it was a user typing,
-            // otherwise assume the value got filled in by TextMemberPath
-            // or the handler for SuggestionChosen.
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
-                List<string> result = tagsList.Select(o => o.Name).Where(x => x.StartsWith(sender.Text)).ToList();
+                List<string> result = tagsList.Select(o => o.Name).Where(x => x.Contains(sender.Text)).ToList();
                 sender.ItemsSource = result;
             }
         }
@@ -91,45 +94,55 @@ namespace IMG.Pages
         }
 
 
-        private void AutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        private async void AutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
             string cleanText = sender.Text.Trim();
-            //double checking
+            //is tag already in image
             if (fullScreenImage.Image.Tags.Where(x => x.Name == cleanText).Count() > 0)
                 return;
-
+            //find the tag in the database
             if (SQLiteConnector.TagExist(cleanText))
-            {
+            {//TODO swap to return tag from DB for data integrity
                 fullScreenImage.Image.Tags.Add(new Tag(cleanText));
                 sender.Text = "";
                 return;
             }
+            //build content dialog
+            MessageDialog dialog = new MessageDialog("The tag does not exist, do you want to create it?");
+            dialog.Commands.Add(new UICommand("yes"));
+            dialog.Commands.Add(new UICommand("yes, add description"));
+            dialog.Commands.Add(new UICommand("no"));
+            dialog.DefaultCommandIndex = 0;
+            dialog.CancelCommandIndex = 2;
 
-            
+            UICommand answer = (UICommand)await dialog.ShowAsync();
+            await TagMessageHandler(answer);
         }
-
-        private async void TagMessageHandler(IUICommand command)
+        //handle the answer of the tag creation dialog
+        private async Task TagMessageHandler(IUICommand command)
         {
-            if (command.Label == "Create Tag")
+            if (command.Label == "yes")
             {
-                Tag t = new Tag(AutoSuggestTag.Text.TrimEnd());
+                Tag t = new Tag(AutoSuggestTag.Text.Trim());
                 if (SQLiteConnector.CreateTag(t))
                 {
                     fullScreenImage.Image.Tags.Add(t);
                     AutoSuggestTag.Text = "";
+                    tagsList = SQLiteConnector.GetTags();
                 }
             }
-            else if(command.Label == "Create and add description")
+            else if(command.Label == "yes, add description")
             {
                 var dialog = new Dialog.TextInputContentDialog(AutoSuggestTag.Text);
                 var result = await dialog.ShowAsync();
                 if(result == ContentDialogResult.Primary)
                 {
-                    Tag t = new Tag(AutoSuggestTag.Text.TrimEnd(), dialog.Text.TrimEnd());
+                    Tag t = new Tag(AutoSuggestTag.Text.Trim(), dialog.Text.Trim());
                     if(SQLiteConnector.CreateTag(t))
                     {
                         fullScreenImage.Image.Tags.Add(t);
                         AutoSuggestTag.Text = "";
+                        tagsList = SQLiteConnector.GetTags();
                     }
                 }
             }
@@ -211,13 +224,6 @@ namespace IMG.Pages
             rows++;
         }
 
-        private void ImageGridSizeChanged(object sender, Windows.UI.Xaml.SizeChangedEventArgs e)
-        {
-            //var panel = (ItemsWrapGrid)ImageGrid.ItemsPanelRoot;
-            //panel.MaximumRowsOrColumns = (int)e.NewSize.Width / 110;
-            
-        }
-
         private void Page_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             double height = Window.Current.Bounds.Height - topUI.Height;
@@ -272,6 +278,7 @@ namespace IMG.Pages
                     //list of access tokens
                     BasicProperties fileProp = await file.GetBasicPropertiesAsync();
                     ImageProperties imgProps = await file.Properties.GetImagePropertiesAsync();
+                    
                     imgProps.PeopleNames.ToList();
 
                     imageCol.Add(new ImageData()
@@ -310,13 +317,22 @@ namespace IMG.Pages
                         await bitmapImage.SetSourceAsync(fileStream);
 
                         bitmapImage.DecodePixelWidth = 80;
+                        if (bitmapImage.IsAnimatedBitmap)
+                        {
+                            imageCol[imageCol.Count - 1].Tags.Add(tagsList[1]);
+                            bitmapImage.AutoPlay = false;
+                            bitmapImage.Stop();
+                        }
 
                         //find the ImageComponent
                         Image img = (Image)FindChild(ImageGrid.ContainerFromIndex(ImageGrid.Items.Count - 1), typeof(Image));
-                        
+
                         //safety check
                         if (img != null)
+                        {
                             img.Source = bitmapImage;
+                            
+                        }
                     }
                 }
             }
@@ -490,6 +506,7 @@ namespace IMG.Pages
 
             navIndex = ImageGrid.SelectedIndex;
             ImageGrid.Visibility = Visibility.Collapsed;
+            topUI.Visibility = Visibility.Collapsed;
             FullScreenPanel.Visibility = Visibility.Visible;
             fullscreenMode = true;
             return true;
@@ -498,6 +515,7 @@ namespace IMG.Pages
         private void exitFullScreenMode() 
         {
             ImageGrid.Visibility = Visibility.Visible;
+            topUI.Visibility = Visibility.Visible;
             FullScreenPanel.Visibility = Visibility.Collapsed;
             ImageGrid.SelectedIndex = navIndex;
             fullscreenMode = false;
@@ -549,6 +567,12 @@ namespace IMG.Pages
         {
             imageCol.RemoveAt(navIndex);
             await NavigateFullScreen(Navigation.NONE);
+        }
+
+        private async void MenuFlyoutManageTags_Click(object sender, RoutedEventArgs e)
+        {
+            TagDialog dialog = new TagDialog();
+            await dialog.ShowAsync();
         }
     }
 

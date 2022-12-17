@@ -11,6 +11,20 @@ namespace IMG.Models
     {
         private string name;
         private string description;
+        private bool protectedTag;
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <param name="Description"></param>
+        /// <param name="protectedTag">do not set to true outside of SQLConnector, will do nothing</param>
+        public Tag(string Name, string Description = "", bool protectedTag = false)
+        {
+            this.Name = Name;
+            this.Description = Description;
+            this.protectedTag = protectedTag;
+        }
 
         public string Name 
         { 
@@ -36,11 +50,12 @@ namespace IMG.Models
             }
         }
 
-        public Tag(string Name, string Description = "")
+        public bool ProtectedTag
         {
-            this.Name = Name;
-            this.Description = Description;
+            get { return protectedTag; }
         }
+
+        
 
     }
 }

@@ -12,7 +12,12 @@ namespace IMG.DataConverter
     {
         public static Brush ToColor(bool isDuplicate)
         {
-            return isDuplicate ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.White);
+            return isDuplicate ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.Transparent);
+        }
+
+        public static Brush newTagToColor(bool isNewTag)
+        {
+            return isNewTag ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Transparent);
         }
     }
 }

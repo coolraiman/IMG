@@ -24,6 +24,9 @@
             <MenuBarItem Title="Debug">
                 <MenuFlyoutItem Text="Delete all" Click="MenuFlyoutDelete_Click"></MenuFlyoutItem>
             </MenuBarItem>
+            <MenuBarItem Title="Tags">
+                <MenuFlyoutItem Text="Manage" Click="MenuFlyoutManageTags_Click"></MenuFlyoutItem>
+            </MenuBarItem>
         </MenuBar>
         <StackPanel x:Name="topUI" Grid.Row="1"
             Padding="2"
@@ -38,7 +41,6 @@
         </StackPanel>
         
         <GridView x:Name="ImageGrid" Width="Auto" Background="LightBlue" Grid.Row="2" Margin="5" Height="400"
-                      SizeChanged="ImageGridSizeChanged"
                       ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                       ScrollViewer.HorizontalScrollMode="Disabled"
                       ScrollViewer.VerticalScrollBarVisibility="Visible"

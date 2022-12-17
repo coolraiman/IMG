@@ -58,22 +58,15 @@ namespace IMG
                 (sender, args) => Debug.WriteLine(args.Message);
         }
 
-        //if files do no exist, create
+        //if files does no exist, create
         private async void checkFiles()
         {
             StorageFolder localFolder = ApplicationData.Current.LocalFolder;
             StorageFolder dbFolder;
-            try
-            {
-                dbFolder = await localFolder.CreateFolderAsync("imgs", CreationCollisionOption.OpenIfExists);
-            }
-            catch(System.Exception ex)// folder already exist
-            {
-                dbFolder = await localFolder.GetFolderAsync("imgs");
-                await dbFolder.DeleteAsync(StorageDeleteOption.PermanentDelete);//delete all, debug only
-                dbFolder = await localFolder.CreateFolderAsync("imgs");// re create folder
-            }
 
+            dbFolder = await localFolder.CreateFolderAsync("imgs", CreationCollisionOption.OpenIfExists);
+
+            //create every folder if they do not exist
             for (int i = 0; i < 256; i++)
             {
                 await dbFolder.CreateFolderAsync(i.ToString("X2"), CreationCollisionOption.OpenIfExists);

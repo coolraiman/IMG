@@ -17,6 +17,9 @@ using Windows.UI.Xaml.Navigation;
 
 namespace IMG.Dialog
 {
+    /// <summary>
+    /// Simple dialog to add a description to a tagg
+    /// </summary>
     public sealed partial class TextInputContentDialog : ContentDialog
     {
         public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
