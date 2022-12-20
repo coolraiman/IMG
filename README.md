@@ -16,3 +16,7 @@ The objective of this program is to deepen my learning of UWP, it was not made t
 ### Upload page example
 
 ![Upload page](/IMG/Assets/GitReadme/searchPage.png)
+
+### Tag Manager dialog menu
+
+![Upload page](/IMG/Assets/GitReadme/tagManager.png)
