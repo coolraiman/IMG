@@ -74,7 +74,7 @@
                         <ComboBoxItem Content="Number of tags"></ComboBoxItem>
                     </ComboBox>
                     <TextBlock Text="order by " VerticalAlignment="Center"></TextBlock>
-                    <ComboBox SelectedIndex="0" Margin="2">
+                    <ComboBox x:Name="comboBoxOrderBy" SelectedIndex="0" Margin="2" SelectionChanged="sortParamChanged">
                         <ComboBoxItem Content="Ascending" ></ComboBoxItem>
                         <ComboBoxItem Content="Descending"></ComboBoxItem>
                     </ComboBox>
@@ -101,7 +101,7 @@
                                 <StackPanel Margin="1">
                                     <TextBlock Text="{x:Bind File}" />
                                 </StackPanel>
-                                <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="Uniform" />
+                                <Image x:Name="thumbIMG" Width="80" Height="100" Stretch="Uniform" Source="{x:Bind BitmapImage}" />
                             </StackPanel>
                         </DataTemplate>
                     </GridView.ItemTemplate>

@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage.FileProperties;
 using Windows.UI.Xaml.Media;
+using Windows.UI.Xaml.Media.Imaging;
 
 namespace IMG.Models
 {
@@ -51,6 +52,19 @@ namespace IMG.Models
                 if(value !=duplicate)
                     duplicate = value;
                 OnPropertyChanged(); 
+            }
+        }
+
+        private BitmapImage bitmapImage;
+        public BitmapImage BitmapImage
+        {
+            get { return bitmapImage; }
+            set
+            {
+                if (value != bitmapImage)
+                {
+                    bitmapImage = value;
+                }
             }
         }
     }

@@ -35,7 +35,8 @@ namespace IMG.Pages
     /// </summary>
     public sealed partial class SearchPage : Page
     {
-        private ObservableCollection<ImageData> imageCol;
+
+        private ObservableCollection<ImageData> ImageCol;
         //private ImageData fullScreenImage;
         private FullScreenImage fullScreenImage = new FullScreenImage();
         private int navIndex = -1;
@@ -46,11 +47,11 @@ namespace IMG.Pages
         public event PropertyChangedEventHandler PropertyChanged;
         public SearchPage()
         {
-            imageCol = new ObservableCollection<ImageData>();
+            ImageCol = new ObservableCollection<ImageData>();
 
             this.InitializeComponent();
 
-            ImageGrid.ItemsSource = imageCol;
+            ImageGrid.ItemsSource = ImageCol;
             tagsListView.ItemsSource = fullScreenImage.Image.Tags;
             searchInclude.ItemsSource = search.Include;
             searchExclude.ItemsSource = search.Exclude;
@@ -85,7 +86,7 @@ namespace IMG.Pages
 
         private async void OnClickSearch(object sender, RoutedEventArgs e)
         {
-            imageCol.Clear();
+            ImageCol.Clear();
             List<ImageData> imgs = await SQLiteConnector.searchImages(search.Include.Select(x => x.Name).ToList(), search.Exclude.Select(x => x.Name).ToList());
             
             await loadSearchResultsThumbnails(imgs);
@@ -98,9 +99,9 @@ namespace IMG.Pages
                 StorageFolder imgsFolder = await ApplicationData.Current.LocalFolder.GetFolderAsync("imgs");
                 for (int i = 0; i < imgs.Count; i++)
                 {
-                    imageCol.Add(imgs[i]);
+                    
 
-                    StorageFolder subFolder = await imgsFolder.GetFolderAsync(imageCol[i].Hash.Substring(0, 2));
+                    StorageFolder subFolder = await imgsFolder.GetFolderAsync(imgs[i].Hash.Substring(0, 2));
                     StorageFile file = await subFolder.GetFileAsync(imgs[i].Hash + imgs[i].Extension);
                     using (Windows.Storage.Streams.IRandomAccessStream fileStream =
                             await file.OpenAsync(Windows.Storage.FileAccessMode.Read))
@@ -109,12 +110,9 @@ namespace IMG.Pages
                         BitmapImage bitmapImage = new BitmapImage();
                         await bitmapImage.SetSourceAsync(fileStream);
                         bitmapImage.DecodePixelWidth = 150;
+                        imgs[i].BitmapImage = bitmapImage;
+                        ImageCol.Add(imgs[i]);
 
-                        //find the ImageComponent
-                        Image imgUI = (Image)FindChild(ImageGrid.ContainerFromIndex(ImageGrid.Items.Count - 1), typeof(Image));
-                        //safety check
-                        if (imgUI != null)
-                            imgUI.Source = bitmapImage;
                     }
                 }
             } catch ( Exception e )
@@ -253,10 +251,10 @@ namespace IMG.Pages
 
         private async Task loadFullscreenImage(int index)
         {
-            fullScreenImage.Image = imageCol[index];
+            fullScreenImage.Image = ImageCol[index];
             StorageFolder imgsFolder = await ApplicationData.Current.LocalFolder.GetFolderAsync("imgs");
-            StorageFolder subFolder = await imgsFolder.GetFolderAsync(imageCol[index].Hash.Substring(0, 2));
-            StorageFile file = await subFolder.GetFileAsync(imageCol[index].Hash + imageCol[index].Extension);
+            StorageFolder subFolder = await imgsFolder.GetFolderAsync(ImageCol[index].Hash.Substring(0, 2));
+            StorageFile file = await subFolder.GetFileAsync(ImageCol[index].Hash + ImageCol[index].Extension);
             // Ensure the stream is disposed once the image is loaded
             using (IRandomAccessStream fileStream = await file.OpenAsync(Windows.Storage.FileAccessMode.Read))
             {
@@ -301,15 +299,15 @@ namespace IMG.Pages
             {
                 return;
             }
-            else if (imageCol.Count == 1)
+            else if (ImageCol.Count == 1)
             {
                 return;
             }
             else if (navIndex + (int)navigation < 0)
             {
-                navIndex = imageCol.Count - 1;
+                navIndex = ImageCol.Count - 1;
             }
-            else if (navIndex + (int)navigation >= imageCol.Count)
+            else if (navIndex + (int)navigation >= ImageCol.Count)
             {
                 navIndex = 0;
             }
@@ -355,22 +353,46 @@ namespace IMG.Pages
 
         private void sortParamChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (imageCol == null || imageCol.Count == 0)
+            if (ImageCol == null || ImageCol.Count == 0)
                 return;
 
             int selectedParam = comboBoxSortBy.SelectedIndex;
+            List<ImageData> temp;
             switch (selectedParam) 
             {
                 case 0:
-                    imageCol.OrderBy(x => x.Hash);
+                    temp = ImageCol.OrderBy(x => x.Hash).ToList();
                     break;
                 case 1:
-                    imageCol.OrderBy(x => x.Name);
+                    temp = ImageCol.OrderBy(x => x.Name).ToList();
                     break;
                 case 2:
-                    imageCol.OrderBy(x => x.Size);
+                    temp = ImageCol.OrderBy(x => x.Size).ToList();
+                    break;
+                case 3:
+                    temp = ImageCol.OrderBy(x => x.Tags.Count).ToList();
+                    break;
+                default:
+                    temp = new List<ImageData>();
                     break;
             }
+
+            ImageCol.Clear();
+            if(comboBoxOrderBy.SelectedIndex != 1)
+            {
+                foreach (ImageData img in temp)
+                {
+                    ImageCol.Add(img);
+                }
+            }
+            else
+            {
+                for(int i = temp.Count - 1; i >= 0; i--) 
+                {
+                    ImageCol.Add(temp[i]);
+                }
+            }
+            
         }
     }
 }
