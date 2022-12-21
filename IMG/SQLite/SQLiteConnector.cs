@@ -591,6 +591,51 @@ namespace IMG.SQLite
             }
             return images;
         }
+        /// <summary>
+        /// scan database to see if some image are not linked to any image file
+        /// </summary>
+        public static async Task<int> ScanDatabaseIntegrity()
+        {
+            StorageFolder imgsFolder = await ApplicationData.Current.LocalFolder.GetFolderAsync("imgs");
+            List<string> unlinked = new List<string>();
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                using (SQLiteCommand cmd = con.CreateCommand()) 
+                {
+                    cmd.CommandText = "SELECT Hash, extension FROM Images";
+
+                    using (SQLiteDataReader rdr = cmd.ExecuteReader())
+                    {
+                        while (rdr.Read()) 
+                        {
+                            string hash = rdr.GetString(0);
+                            StorageFolder subFolder = await imgsFolder.GetFolderAsync(hash.Substring(0,2));
+                            var file = subFolder.TryGetItemAsync(hash + rdr.GetString(1));
+                            if(file == null)
+                                unlinked.Add(hash);
+                        }
+                    }
+                }
+
+                foreach(string hash in unlinked) 
+                {
+                    using (SQLiteCommand cmd = con.CreateCommand())
+                    {
+                        cmd.CommandText = "DELETE FROM ImagesTags WHERE Hash = @hash";
+                        cmd.Parameters.AddWithValue("@hash", "hash");
+                        cmd.ExecuteNonQuery();
+                    }
+                    using (SQLiteCommand cmd = con.CreateCommand())
+                    {
+                        cmd.CommandText = "DELETE FROM Images WHERE Hash = @hash";
+                        cmd.Parameters.AddWithValue("@hash", "hash");
+                        cmd.ExecuteNonQuery();
+                    }
+                }
+            }
+            return unlinked.Count;
+        }
 
         public static bool IsDatabaseLocked()
         {

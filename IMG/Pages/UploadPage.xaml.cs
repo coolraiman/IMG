@@ -563,6 +563,13 @@ namespace IMG.Pages
             TagDialog dialog = new TagDialog();
             await dialog.ShowAsync();
         }
+
+        private async void MenuFlyoutScanDBIntegrity_Click(object sender, RoutedEventArgs e)
+        {
+            var cleaned = await SQLiteConnector.ScanDatabaseIntegrity();
+            MessageDialog md = new MessageDialog(cleaned.ToString() + " database items not linked to physical image");
+            await md.ShowAsync();
+        }
     }
 
     internal enum Navigation

@@ -23,6 +23,7 @@
             </MenuBarItem>
             <MenuBarItem Title="Debug">
                 <MenuFlyoutItem Text="Delete all" Click="MenuFlyoutDelete_Click"></MenuFlyoutItem>
+                <MenuFlyoutItem Text="Scan DB integrity" Click="MenuFlyoutScanDBIntegrity_Click"></MenuFlyoutItem>
             </MenuBarItem>
             <MenuBarItem Title="Tags">
                 <MenuFlyoutItem Text="Manage" Click="MenuFlyoutManageTags_Click"></MenuFlyoutItem>
