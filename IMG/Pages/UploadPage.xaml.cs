@@ -272,38 +272,15 @@ namespace IMG.Pages
                 
                 foreach (Windows.Storage.StorageFile file in files)
                 {
+                    string faToken = StorageApplicationPermissions.FutureAccessList.Add(file);
                     //prevent duplicates
-                    if (isDuplicateFile(file.Path))
+                    if (isDuplicateFile(faToken))
                         continue;
                     //list of access tokens
                     BasicProperties fileProp = await file.GetBasicPropertiesAsync();
                     ImageProperties imgProps = await file.Properties.GetImagePropertiesAsync();
                     
                     imgProps.PeopleNames.ToList();
-
-                    imageCol.Add(new ImageData()
-                    {
-                        Name = file.Name,
-                        Hash = "",
-                        Size = fileProp.Size,
-                        Extension = file.FileType,
-                        Rating = 0,
-                        Favorite = false,
-                        Views = 0,
-                        DateAdded = DateTime.Now,
-                        DateTaken = imgProps.DateTaken.DateTime,
-                        Height = imgProps.Height,
-                        Width = imgProps.Width,
-                        Orientation = imgProps.Orientation,
-                        CameraManufacturer = imgProps.CameraManufacturer,
-                        CameraModel = imgProps.CameraModel,
-                        Latitude = imgProps.Latitude,
-                        Longitude = imgProps.Longitude,
-                        tempTags = new ObservableCollection<string>(imgProps.PeopleNames),
-                        FaToken = StorageApplicationPermissions.FutureAccessList.Add(file)
-                    }) ;
-                    
-
                     // Open a stream for the selected files.
                     // The 'using' block ensures the stream is disposed
                     // after the image is loaded.
@@ -317,21 +294,33 @@ namespace IMG.Pages
                         await bitmapImage.SetSourceAsync(fileStream);
 
                         bitmapImage.DecodePixelWidth = 80;
+                        imageCol.Add(new ImageData()
+                        {
+                            Name = file.Name,
+                            Hash = "",
+                            Size = fileProp.Size,
+                            Extension = file.FileType,
+                            Rating = 0,
+                            Favorite = false,
+                            Views = 0,
+                            DateAdded = DateTime.Now,
+                            DateTaken = imgProps.DateTaken.DateTime,
+                            Height = imgProps.Height,
+                            Width = imgProps.Width,
+                            Orientation = imgProps.Orientation,
+                            CameraManufacturer = imgProps.CameraManufacturer,
+                            CameraModel = imgProps.CameraModel,
+                            Latitude = imgProps.Latitude,
+                            Longitude = imgProps.Longitude,
+                            tempTags = new ObservableCollection<string>(imgProps.PeopleNames),
+                            FaToken = faToken,
+                            BitmapImage = bitmapImage
+                        });
                         if (bitmapImage.IsAnimatedBitmap)
                         {
                             imageCol[imageCol.Count - 1].Tags.Add(tagsList[1]);
                             bitmapImage.AutoPlay = false;
                             bitmapImage.Stop();
-                        }
-
-                        //find the ImageComponent
-                        Image img = (Image)FindChild(ImageGrid.ContainerFromIndex(ImageGrid.Items.Count - 1), typeof(Image));
-
-                        //safety check
-                        if (img != null)
-                        {
-                            img.Source = bitmapImage;
-                            
                         }
                     }
                 }
@@ -381,11 +370,11 @@ namespace IMG.Pages
             this.Frame.Navigate(typeof(SearchPage));
         }
 
-        public bool isDuplicateFile(string file)
+        public bool isDuplicateFile(string token)
         {
             for(int i = 0; i < imageCol.Count; i++)
             {
-                if (file == imageCol[i].Hash)
+                if (token == imageCol[i].FaToken)
                     return true;
             }
             return false;

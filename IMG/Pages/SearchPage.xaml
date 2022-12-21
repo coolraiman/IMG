@@ -64,7 +64,7 @@
                 </ListView>
                 <Button Content="Search" Click="OnClickSearch"></Button>
             </StackPanel>
-            <StackPanel Orientation="Vertical" Width="auto">
+            <StackPanel Orientation="Vertical" Width="auto" Padding="3">
                 <StackPanel x:Name="orderParam" Orientation="Horizontal">
                     <TextBlock  Text="sort by " VerticalAlignment="Center"></TextBlock>
                     <ComboBox x:Name="comboBoxSortBy" SelectedIndex="0" Margin="2" SelectionChanged="sortParamChanged">
