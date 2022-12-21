@@ -328,7 +328,7 @@ namespace IMG.Pages
             }
 
             navIndex = ImageGrid.SelectedIndex;
-            ImageGrid.Visibility = Visibility.Collapsed;
+            MainView.Visibility = Visibility.Collapsed;
             searchPanel.Visibility = Visibility.Collapsed;
             FullScreenPanel.Visibility = Visibility.Visible;
             fullscreenMode = true;
@@ -337,7 +337,7 @@ namespace IMG.Pages
 
         private void exitFullScreenMode()
         {
-            ImageGrid.Visibility = Visibility.Visible;
+            MainView.Visibility = Visibility.Visible;
             searchPanel.Visibility = Visibility.Visible;
             FullScreenPanel.Visibility = Visibility.Collapsed;
             ImageGrid.SelectedIndex = navIndex;
@@ -372,8 +372,23 @@ namespace IMG.Pages
                 case 3:
                     temp = ImageCol.OrderBy(x => x.Tags.Count).ToList();
                     break;
+                case 4:
+                    temp = ImageCol.OrderBy(x => x.Rating).ToList();
+                    break;
+                case 5:
+                    temp = ImageCol.OrderBy(x => x.Favorite).ToList();
+                    break;
+                case 6:
+                    temp = ImageCol.OrderBy(x => x.Views).ToList();
+                    break;
+                case 7:
+                    temp = ImageCol.OrderBy(x => x.DateAdded).ToList();
+                    break;
+                case 8:
+                    temp = ImageCol.OrderBy(x => x.DateTaken).ToList();
+                    break;
                 default:
-                    temp = new List<ImageData>();
+                    temp = ImageCol.ToList();
                     break;
             }
 

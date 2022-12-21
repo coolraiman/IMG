@@ -64,7 +64,7 @@
                 </ListView>
                 <Button Content="Search" Click="OnClickSearch"></Button>
             </StackPanel>
-            <StackPanel Orientation="Vertical" Width="auto" Padding="3">
+            <StackPanel x:Name="MainView" Orientation="Vertical" Width="auto" Padding="3">
                 <StackPanel x:Name="orderParam" Orientation="Horizontal">
                     <TextBlock  Text="sort by " VerticalAlignment="Center"></TextBlock>
                     <ComboBox x:Name="comboBoxSortBy" SelectedIndex="0" Margin="2" SelectionChanged="sortParamChanged">
@@ -72,6 +72,11 @@
                         <ComboBoxItem Content="File Name"></ComboBoxItem>
                         <ComboBoxItem Content="File Size"></ComboBoxItem>
                         <ComboBoxItem Content="Number of tags"></ComboBoxItem>
+                        <ComboBoxItem Content="Rating"></ComboBoxItem>
+                        <ComboBoxItem Content="Favorite"></ComboBoxItem>
+                        <ComboBoxItem Content="Views"></ComboBoxItem>
+                        <ComboBoxItem Content="Date added"></ComboBoxItem>
+                        <ComboBoxItem Content="Date taken"></ComboBoxItem>
                     </ComboBox>
                     <TextBlock Text="order by " VerticalAlignment="Center"></TextBlock>
                     <ComboBox x:Name="comboBoxOrderBy" SelectedIndex="0" Margin="2" SelectionChanged="sortParamChanged">

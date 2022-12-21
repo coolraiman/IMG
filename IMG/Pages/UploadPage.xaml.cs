@@ -369,7 +369,7 @@ namespace IMG.Pages
         {
             this.Frame.Navigate(typeof(SearchPage));
         }
-
+        //FaToken is an easy and secure way to determine if the same file is being imported twice
         public bool isDuplicateFile(string token)
         {
             for(int i = 0; i < imageCol.Count; i++)
