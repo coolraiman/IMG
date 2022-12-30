@@ -11,7 +11,8 @@ The objective of this program is to deepen my learning of UWP, it was not made t
 - Search images by including and excluding tags
 - Convert image metadata list of identified person to tags
 - Fullscreen image viewer
-
+- Set image as favorite
+- Rate image from 0 to 5
 
 ### Upload page example
 
@@ -20,3 +21,11 @@ The objective of this program is to deepen my learning of UWP, it was not made t
 ### Tag Manager dialog menu
 
 ![Upload page](/IMG/Assets/GitReadme/tagManager.png)
+
+### Fullscreen view with keyboard navigation
+
+![Upload page](/IMG/Assets/GitReadme/Fullscreen.png)
+
+### Sort and order your search result with many options
+
+![Upload page](/IMG/Assets/GitReadme/sort.png)
