@@ -69,7 +69,8 @@
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
-        <StackPanel x:Name="RatingPanel" Visibility="Collapsed" Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right" Canvas.ZIndex="10">
+        <StackPanel x:Name="RatingPanel" Visibility="Collapsed" Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right" 
+                    Canvas.ZIndex="10" BorderBrush="Black" BorderThickness="1" Background="White">
             <TextBlock Text="Rating" Margin="3"/>
             <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="1"
                     Background="{x:Bind local:BoolToColor.RatingToColor(1,fullScreenImage.Image.Rating), Mode=OneWay}"/>
