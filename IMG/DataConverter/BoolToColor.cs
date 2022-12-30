@@ -19,5 +19,22 @@ namespace IMG.DataConverter
         {
             return isNewTag ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Transparent);
         }
+
+        public static Brush FavoriteToColor(bool favorite)
+        {
+            return favorite ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.White);
+        }
+
+        public static Brush RatingToColor(int buttonValue, byte rating)
+        {
+            if(buttonValue > rating) 
+            {
+                return new SolidColorBrush(Colors.Gray);
+            }
+            else
+            {
+                return new SolidColorBrush(Colors.Yellow);
+            }
+        }
     }
 }

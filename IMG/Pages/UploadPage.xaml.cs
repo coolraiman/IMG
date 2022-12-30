@@ -497,6 +497,7 @@ namespace IMG.Pages
             ImageGrid.Visibility = Visibility.Collapsed;
             topUI.Visibility = Visibility.Collapsed;
             FullScreenPanel.Visibility = Visibility.Visible;
+            RatingPanel.Visibility = Visibility.Visible;
             fullscreenMode = true;
             return true;
         }
@@ -506,6 +507,7 @@ namespace IMG.Pages
             ImageGrid.Visibility = Visibility.Visible;
             topUI.Visibility = Visibility.Visible;
             FullScreenPanel.Visibility = Visibility.Collapsed;
+            RatingPanel.Visibility = Visibility.Collapsed;
             ImageGrid.SelectedIndex = navIndex;
             fullscreenMode = false;
         }
@@ -569,6 +571,32 @@ namespace IMG.Pages
             var cleaned = await SQLiteConnector.ScanDatabaseIntegrity();
             MessageDialog md = new MessageDialog(cleaned.ToString() + " database items not linked to physical image");
             await md.ShowAsync();
+        }
+
+        private void ButtonFavorite_Click(object sender, RoutedEventArgs e)
+        {
+            if (!fullscreenMode)
+                return;
+
+            fullScreenImage.Image.Favorite = !fullScreenImage.Image.Favorite;
+        }
+
+        private void ButtonRating_Click(object sender, RoutedEventArgs e)
+        {
+            byte value;
+            if(!byte.TryParse(((sender as Button).Tag as string), out value))
+            {
+                return;
+            }
+
+            if(value == fullScreenImage.Image.Rating) 
+            {
+                fullScreenImage.Image.Rating = 0;
+            }
+            else
+            {
+                fullScreenImage.Image.Rating = value;
+            }
         }
     }
 

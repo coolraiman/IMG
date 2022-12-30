@@ -2,7 +2,7 @@
     x:Class="IMG.Pages.SearchPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:IMG.Pages"
+    xmlns:local="using:IMG.DataConverter" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Models="using:IMG.Models"
@@ -15,6 +15,22 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
+        <StackPanel x:Name="RatingPanel" Visibility="Collapsed" Grid.Row="0" Orientation="Horizontal" Margin="5"  VerticalAlignment="Top" HorizontalAlignment="Right" Canvas.ZIndex="10">
+            <TextBlock Text="Rating" Margin="3"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="1"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(1,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="2"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(2,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="3"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(3,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="4"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(4,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="5"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(5,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <TextBlock Text="Favorite" Margin="3"/>
+            <Button Click="ButtonFavorite_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20"
+                    Background="{x:Bind local:BoolToColor.FavoriteToColor(fullScreenImage.Image.Favorite), Mode=OneWay}"/>
+        </StackPanel>
         <StackPanel x:Name="topUI" Grid.Row="0"
             Padding="2"
             BorderBrush="Black"

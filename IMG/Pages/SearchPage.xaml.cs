@@ -331,6 +331,7 @@ namespace IMG.Pages
             MainView.Visibility = Visibility.Collapsed;
             searchPanel.Visibility = Visibility.Collapsed;
             FullScreenPanel.Visibility = Visibility.Visible;
+            RatingPanel.Visibility = Visibility.Visible;
             fullscreenMode = true;
             return true;
         }
@@ -340,6 +341,7 @@ namespace IMG.Pages
             MainView.Visibility = Visibility.Visible;
             searchPanel.Visibility = Visibility.Visible;
             FullScreenPanel.Visibility = Visibility.Collapsed;
+            RatingPanel.Visibility = Visibility.Collapsed;
             ImageGrid.SelectedIndex = navIndex;
             fullscreenMode = false;
         }
@@ -407,6 +409,36 @@ namespace IMG.Pages
                     ImageCol.Add(temp[i]);
                 }
             }
+        }
+
+        private void ButtonFavorite_Click(object sender, RoutedEventArgs e)
+        {
+            if (!fullscreenMode)
+                return;
+
+            if(SQLiteConnector.SetImageFavorite(fullScreenImage.Image.Hash, !fullScreenImage.Image.Favorite) > 0)
+                fullScreenImage.Image.Favorite = !fullScreenImage.Image.Favorite;
+        }
+
+        private void ButtonRating_Click(object sender, RoutedEventArgs e)
+        {
+            if (!fullscreenMode)
+                return;
+
+            byte value;
+            if (!byte.TryParse(((sender as Button).Tag as string), out value))
+            {
+                return;
+            }
+
+            if (value == fullScreenImage.Image.Rating)
+            {
+                value = 0;
+            }
+
+
+            if (SQLiteConnector.SetImageRating(fullScreenImage.Image.Hash, value) > 0)
+                fullScreenImage.Image.Rating = value;
             
         }
     }

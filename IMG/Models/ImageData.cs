@@ -22,8 +22,28 @@ namespace IMG.Models
         public string Extension { get; set; }
         public ulong Size { get; set; }
         public string Name { get; set; }
-        public byte Rating { get; set; }
-        public bool Favorite { get; set; }
+
+        private byte rating;
+        public byte Rating { 
+            get { return rating; }
+            set { 
+                if(value != rating)
+                {
+                    rating = value;
+                    OnPropertyChanged();
+                }
+            } }
+
+        private bool favorite;
+        public bool Favorite { 
+            get { return favorite; } 
+            set {
+                if (value != favorite)
+                {
+                    favorite = value;
+                    OnPropertyChanged();
+                }
+            } }
         public int Views { get; set; }
         public DateTime DateAdded { get; set; }
         public DateTime DateTaken { get; set; }

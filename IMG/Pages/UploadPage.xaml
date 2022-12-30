@@ -7,7 +7,7 @@
     xmlns:img="using:IMG"
     xmlns:local="using:IMG.DataConverter" 
     xmlns:Models="using:IMG.Models"
-    
+    DataContext="{Binding ElementName=_this}"
     mc:Ignorable="d" SizeChanged="Page_SizeChanged"
     Loaded="Page_Loaded"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
@@ -69,6 +69,22 @@
                 </DataTemplate>
             </GridView.ItemTemplate>
         </GridView>
+        <StackPanel x:Name="RatingPanel" Visibility="Collapsed" Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Top" HorizontalAlignment="Right" Canvas.ZIndex="10">
+            <TextBlock Text="Rating" Margin="3"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="1"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(1,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="2"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(2,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="3"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(3,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="4"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(4,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <Button Click="ButtonRating_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20" Tag="5"
+                    Background="{x:Bind local:BoolToColor.RatingToColor(5,fullScreenImage.Image.Rating), Mode=OneWay}"/>
+            <TextBlock Text="Favorite" Margin="3"/>
+            <Button Click="ButtonFavorite_Click" Width="20" Height="20" Margin="3" BorderBrush="Black" BorderThickness="1" CornerRadius="20"
+                    Background="{x:Bind local:BoolToColor.FavoriteToColor(fullScreenImage.Image.Favorite), Mode=OneWay}"/>
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Visibility="Collapsed" x:Name="FullScreenPanel" Grid.Row="1">
             <StackPanel x:Name="tagPanel" Orientation="Vertical" Width="300" BorderBrush="Black" BorderThickness="1">
                 <Button Content="Delete" Click="DeleteFullscreenImage"></Button>

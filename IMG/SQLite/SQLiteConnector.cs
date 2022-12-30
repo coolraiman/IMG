@@ -410,7 +410,43 @@ namespace IMG.SQLite
             return rows;
         }
 
-        
+        public static int SetImageFavorite(string hash, bool favorite)
+        {
+            int rows = 0;
+            using(SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                using(SQLiteCommand cmd = new SQLiteCommand("UPDATE Images SET Favorite = @Favorite WHERE Hash = @Hash", con))
+                {
+                    cmd.Parameters.AddWithValue("@Favorite", favorite);
+                    cmd.Parameters.AddWithValue("@Hash", hash);
+
+                    rows = cmd.ExecuteNonQuery();
+                }
+            }
+            return rows;
+        }
+
+        public static int SetImageRating(string hash, int rating)
+        {
+            if (rating < 0 || rating > 5)
+                return -1;
+
+            int rows = 0;
+            using (SQLiteConnection con = new SQLiteConnection(ConnectionString()))
+            {
+                con.Open();
+                using (SQLiteCommand cmd = new SQLiteCommand("UPDATE Images SET Rating = @Rating WHERE Hash = @Hash", con))
+                {
+                    cmd.Parameters.AddWithValue("@Rating", rating);
+                    cmd.Parameters.AddWithValue("@Hash", hash);
+
+                    rows = cmd.ExecuteNonQuery();
+                }
+            }
+            return rows;
+        }
+
         /// <summary>
         /// find a tag in the database from its name
         /// </summary>
